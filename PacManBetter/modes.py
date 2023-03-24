@@ -58,3 +58,5 @@ class ModeController(object):
             self.current = FREIGHT
         elif self.current is FREIGHT:
             self.timer = 0
+            
+          

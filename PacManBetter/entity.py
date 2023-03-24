@@ -21,19 +21,16 @@ class Entity(object):
         self.directionMethod = self.randomDirection
         self.setStartNode(node)
 
-    def setStartNode(self, node):
-        self.node = node
-        self.startNode = node
-        self.target = node
-        self.setPosition()
+
 
     def setPosition(self):
         self.position = self.node.position.copy()
           
     def validDirection(self, direction):
         if direction is not STOP:
-            if self.node.neighbors[direction] is not None:
-                return True
+            if self.name in self.node.access[direction]:
+                if self.node.neighbors[direction] is not None:
+                    return True
         return False
 
     def getNewTarget(self, direction):
@@ -90,7 +87,6 @@ class Entity(object):
             self.setPosition()
             
             
-#Next two functs not in pacman
     def validDirections(self):
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
@@ -111,3 +107,22 @@ class Entity(object):
             distances.append(vec.magnitudeSquared())
         index = distances.index(min(distances))
         return directions[index]
+        
+
+    def setStartNode(self, node):
+        self.node = node
+        self.startNode = node
+        self.target = node
+        self.setPosition()
+
+    def setBetweenNodes(self, direction):
+        if self.node.neighbors[direction] is not None:
+            self.target = self.node.neighbors[direction]
+            self.position = (self.node.position + self.target.position) / 2.0
+            
+
+    def reset(self):
+        self.setStartNode(self.startNode)
+        self.direction = STOP
+        self.speed = 100
+        self.visible = True

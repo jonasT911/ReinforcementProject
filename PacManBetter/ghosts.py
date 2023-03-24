@@ -16,7 +16,12 @@ class Ghost(Entity):
         self.mode = ModeController(self)
         self.blinky = blinky
         self.homeNode = node
-
+        
+    def reset(self):
+        Entity.reset(self)
+        self.points = 200
+        self.directionMethod = self.goalDirection
+        
     def update(self, dt):
         self.mode.update(dt)
         if self.mode.current is SCATTER:
@@ -40,6 +45,7 @@ class Ghost(Entity):
     def normalMode(self):
         self.setSpeed(100)
         self.directionMethod = self.goalDirection
+        self.homeNode.denyAccess(DOWN, self)
         
     def spawn(self):
         self.goal = self.spawnNode.position
@@ -47,6 +53,7 @@ class Ghost(Entity):
     def setSpawnNode(self, node):
         self.spawnNode = node
 
+        
     def startSpawn(self):
         self.mode.setSpawnMode()
         if self.mode.current == SPAWN:
@@ -138,9 +145,7 @@ class GhostGroup(object):
         for ghost in self:
             ghost.points = 200
 
-    def reset(self):
-        for ghost in self:
-            ghost.reset()
+   
 
     def hide(self):
         for ghost in self:
@@ -149,7 +154,13 @@ class GhostGroup(object):
     def show(self):
         for ghost in self:
             ghost.visible = True
+    
+    def reset(self):
+        for ghost in self:
+            ghost.reset()
 
     def render(self, screen):
         for ghost in self:
             ghost.render(screen)
+            
+

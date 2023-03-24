@@ -10,13 +10,18 @@ class Pacman(Entity):
         self.name = PACMAN
         self.color = YELLOW
         self.direction = LEFT
-
-    def setPosition(self):
-        self.position = self.node.position.copy()
+        self.alive = True
+        self.setBetweenNodes(LEFT)
     
-    #Added on my own
-    def setSpeed(self, speed):
-        self.speed = speed * TILEWIDTH / 16
+    def reset(self):
+        Entity.reset(self)
+        self.direction = LEFT
+        self.setBetweenNodes(LEFT)
+        self.alive = True
+
+    def die(self):
+        self.alive = False
+        self.direction = STOP
     
     def update(self, dt):	
         self.position += self.directions[self.direction]*self.speed*dt
@@ -37,17 +42,8 @@ class Pacman(Entity):
         else: 
             if self.oppositeDirection(direction):
                 self.reverseDirection()
-        
-    def validDirection(self, direction):
-        if direction is not STOP:
-            if self.node.neighbors[direction] is not None:
-                return True
-        return False
 
-    def getNewTarget(self, direction):
-        if self.validDirection(direction):
-            return self.node.neighbors[direction]
-        return self.node
+
     
     def getValidKey(self):
         key_pressed = pygame.key.get_pressed()
@@ -61,30 +57,7 @@ class Pacman(Entity):
             return RIGHT
         return STOP
         
-    def render(self, screen):
-        p = self.position.asInt()
-        pygame.draw.circle(screen, self.color, p, self.radius)
-
-    def overshotTarget(self):
-        if self.target is not None:
-            vec1 = self.target.position - self.node.position
-            vec2 = self.position - self.node.position
-            node2Target = vec1.magnitudeSquared()
-            node2Self = vec2.magnitudeSquared()
-            return node2Self >= node2Target
-        return False
-        
-    def reverseDirection(self):
-        self.direction *= -1
-        temp = self.node
-        self.node = self.target
-        self.target = temp
-
-    def oppositeDirection(self, direction):
-        if direction is not STOP:
-            if direction == self.direction * -1:
-                return True
-        return False
+ 
         
     def eatPellets(self, pelletList):
         for pellet in pelletList:
