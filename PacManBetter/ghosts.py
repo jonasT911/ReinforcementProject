@@ -82,11 +82,6 @@ class Pinky(Ghost):
         self.goal = self.pacman.position + self.pacman.directions[self.pacman.direction] * TILEWIDTH * 4
 
 
-class Clyde(Ghost):
-    def __init__(self, node, pacman=None, blinky=None):
-        Ghost.__init__(self, node, pacman, blinky)
-        self.name = CLYDE
-        self.color = ORANGE
 
 class Inky(Ghost):
     def __init__(self, node, pacman=None, blinky=None):
@@ -102,6 +97,12 @@ class Inky(Ghost):
         vec2 = (vec1 - self.blinky.position) * 2
         self.goal = self.blinky.position + vec2
 
+class Clyde(Ghost):
+    def __init__(self, node, pacman=None, blinky=None):
+        Ghost.__init__(self, node, pacman, blinky)
+        self.name = CLYDE
+        self.color = ORANGE
+
     def scatter(self):
         self.goal = Vector2(0, TILEHEIGHT*NROWS)
 
@@ -115,6 +116,7 @@ class Inky(Ghost):
 
 class GhostGroup(object):
     def __init__(self, node, pacman):
+    #Ghost declarations can be controlled by me
         self.blinky = Blinky(node, pacman)
         self.pinky = Pinky(node, pacman)
         self.inky = Inky(node, pacman, self.blinky)
