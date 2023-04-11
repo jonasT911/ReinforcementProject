@@ -47,6 +47,26 @@ class Pacman(Entity):
                 self.reverseDirection()
 
 
+    def machineUpdate(self, dt,action):
+        self.sprites.update(dt)	
+        self.position += self.directions[self.direction]*self.speed*dt
+        direction = self.convertMachineToAction(action)
+        if self.overshotTarget():
+            self.node = self.target
+            if self.node.neighbors[PORTAL] is not None:
+                self.node = self.node.neighbors[PORTAL]
+            self.target = self.getNewTarget(direction)
+            if self.target is not self.node:
+                self.direction = direction
+            else:
+                self.target = self.getNewTarget(self.direction)
+
+            if self.target is self.node:
+                self.direction = STOP
+            self.setPosition()
+        else: 
+            if self.oppositeDirection(direction):
+                self.reverseDirection()
     
     def getValidKey(self):
         key_pressed = pygame.key.get_pressed()
@@ -60,7 +80,17 @@ class Pacman(Entity):
             return RIGHT
         return STOP
         
- 
+    def convertMachineToAction(self,machine):
+        key_pressed = pygame.key.get_pressed()
+        if machine[0]:
+            return UP
+        if machine[1]:
+            return DOWN
+        if machine[2]:
+            return LEFT
+        if machine[3]:
+            return RIGHT
+        return STOP
         
     def eatPellets(self, pelletList):
         for pellet in pelletList:

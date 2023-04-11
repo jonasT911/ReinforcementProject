@@ -30,8 +30,8 @@ class Agent:
     
         print("WHAT")
 #State includes pacman location, ghost location,ghost direction, array of uneaten pellets, available turns.
-	#Maybe power pellets, ghosts state, fruit
-	#Based on test: ghost behavior.
+	#Maybe power pellets, ghosts state(VERY IMPORTANT), fruit, wall location/straight path to ghost? (This should be covered by direction
+	#For my paper's purpose: ghost behavior.
 	
         pacLoc = game.pacman.position
 	
@@ -136,6 +136,7 @@ def train ():
     agent = Agent()
     game = GameController()
     game.startGame()
+    game.MachineLearning=True
     
     print("At while location")
     while True:
@@ -157,10 +158,10 @@ def train ():
         
         if done:
             #train long memory, plot result
-            game.reset()
+            game.restartGame()
             agent.n_games+=1
             #Uncomment this later
-            #agent.train_long_memory()
+            agent.train_long_memory()
             
             if score>record :
                 record=score

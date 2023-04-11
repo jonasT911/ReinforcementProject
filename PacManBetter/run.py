@@ -14,6 +14,9 @@ from sprites import MazeSprites
 import copy
 
 class GameController(object): #TODO: Add play step function
+
+    MachineLearning=False
+    
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
@@ -30,13 +33,15 @@ class GameController(object): #TODO: Add play step function
     def restartGame(self):
         self.lives = 5
         self.level = 0
-        self.pause.paused = True
+        
         self.fruit = None
         self.startGame()
         self.score = 0
         self.textgroup.updateScore(self.score)
         self.textgroup.updateLevel(self.level)
-        self.textgroup.showText(READYTXT)
+        if (not self.MachineLearning):
+            self.pause.paused = True
+            self.textgroup.showText(READYTXT)
         self.lifesprites.resetLives(self.lives)
 
     def resetLevel(self):
@@ -112,21 +117,23 @@ class GameController(object): #TODO: Add play step function
         self.render()
     
 
-    def play_step(self,action):
+    #TODO: Dont train on paused game
+    def play_step(self,action): #This is for machine learning code
         old_score=self.score
+        deathPenalty=0
         print("Playing a step") 
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
-            self.pacman.update(dt)
+            self.pacman.machineUpdate(dt,action)
             self.ghosts.update(dt)
             self.checkPelletEvents()
             self.checkGhostEvents()
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
-            self.checkGhostEvents()
+            deathPenalty = self.checkGhostEvents()
             self.checkFruitEvents()
         afterPauseMethod = self.pause.update(dt)
         if afterPauseMethod is not None:
@@ -134,11 +141,11 @@ class GameController(object): #TODO: Add play step function
         self.checkEvents()
         self.render() 
         game_over=(self.lives==0)
-        if(game_over):
-            print("I am dead")
-            reward=-800
-        else:
-            reward=self.score-old_score
+        
+        #I may change reward function later
+        # I need a penalty for being caught by the ghost
+
+        reward=self.score-old_score+deathPenalty
         return reward,game_over,self.score                
                              
     def updateScore(self, points):
@@ -201,10 +208,20 @@ class GameController(object): #TODO: Add play step function
                          self.lifesprites.removeImage()
                          self.pacman.die()
                          self.ghosts.hide()
-                         if self.lives <= 0:
-                             self.pause.setPause(pauseTime=3, func=self.restartGame)
+                         if self.lives <= 0:      
+                             #Does not reset if I am in ML mode
+                             if (self.MachineLearning==False):
+                                 self.pause.setPause(pauseTime=3, func=self.restartGame)
                          else:
-                             self.pause.setPause(pauseTime=3, func=self.resetLevel  )      
+                             if (self.MachineLearning==False):
+                                 self.pause.setPause(pauseTime=3, func=self.resetLevel  )
+                             else: 
+                                 self.pacman.reset()
+                                 self.ghosts.reset()
+                                 self.fruit = None      
+                     return -100
+     return 0
+      
     def checkEvents(self):
         for event in pygame.event.get():
             if event.type == QUIT:
