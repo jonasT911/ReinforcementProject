@@ -11,6 +11,9 @@ from run import GameController
 
 from MLfiles.model import Linear_QNet, QTrainer
 from MLfiles.helper import plot
+
+from constants import *
+
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
 LR = 0.001
@@ -22,13 +25,13 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(266,256,4) 
+        self.model = Linear_QNet(290,512,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     
     def get_state(self, game):
     
-        print("WHAT")
+      
 #State includes pacman location, ghost location,ghost direction, array of uneaten pellets, available turns.
 	#Maybe power pellets, ghosts state(VERY IMPORTANT), fruit, wall location/straight path to ghost? (This should be covered by direction
 	#For my paper's purpose: ghost behavior.
@@ -57,25 +60,6 @@ class Agent:
 		dir_u,
 		dir_d,
 		
-		#Ghost Positions
-		blink.position.x,
-		blink.position.y,
-		
-		pink.position.x,
-		pink.position.y,
-		
-		ink.position.x,
-		ink.position.y,
-		
-		clyde.position.x,
-		clyde.position.y,
-		#Ghost Direction 
-		#These need to be changed so that left and right are not twice up and down.
-		blink.direction,		
-		pink.direction,
-		ink.direction,		
-		clyde.direction,
-		
 		#Open positions for pac man
 		game.pacman.getNewTarget(LEFT) is not game.pacman.node,
 		game.pacman.getNewTarget(RIGHT)is not game.pacman.node,
@@ -84,10 +68,49 @@ class Agent:
 		
 		
 		
+		#Ghost Positions
+		blink.position.x,
+		blink.position.y,
+		blink.mode.current == FREIGHT,
+		blink.mode.current == SPAWN,
+		
+		pink.position.x,
+		pink.position.y,
+		pink.mode.current == FREIGHT,
+		pink.mode.current == SPAWN,
+		
+		ink.position.x,
+		ink.position.y,
+		ink.mode.current == FREIGHT,
+		ink.mode.current == SPAWN,
+		
+		clyde.position.x,
+		clyde.position.y,
+		clyde.mode.current == FREIGHT,
+		clyde.mode.current == SPAWN,
+		#Ghost Direction 
+		#These need to be changed so that left and right are not twice up and down.
+	
+		
 
         ]
         #Add the pellets to the list, and show if they are active.
-      
+        blinkDir=[0,0,0,0,0]
+        blinkDir[2+blink.direction]=1
+        state.extend(blinkDir)
+        
+        ink_Dir=[0,0,0,0,0]
+        ink_Dir[2+ink.direction]=1
+        state.extend(ink_Dir)
+        
+        pinkDir=[0,0,0,0,0]
+        pinkDir[2+pink.direction]=1
+        state.extend(pinkDir)
+        
+        clydeDir=[0,0,0,0,0]
+        clydeDir[2+clyde.direction]=1
+        state.extend(clydeDir)
+        
         pelletLocations=[]
         for i in pellets:
                pelletLocations.extend([int(i.eaten)])#Need better boolean. Visible is for special effects

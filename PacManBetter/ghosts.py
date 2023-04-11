@@ -133,6 +133,7 @@ class GhostGroup(object):
         return iter(self.ghosts)
 
     def update(self, dt):
+    	#self.blinky.update(dt)
         for ghost in self:
             ghost.update(dt)
 
