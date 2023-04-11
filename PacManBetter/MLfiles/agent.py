@@ -9,8 +9,8 @@ from vector import Vector2
 from constants import *
 from run import GameController
 
-from model import Linear_QNet, QTrainer
-from helper import plot
+from MLfiles.model import Linear_QNet, QTrainer
+from MLfiles.helper import plot
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
 LR = 0.001
@@ -22,7 +22,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(18,256,3) 
+        self.model = Linear_QNet(266,256,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     
@@ -44,9 +44,10 @@ class Agent:
         pink=game.ghosts.pinky
         ink=game.ghosts.inky
         clyde=game.ghosts.clyde
-        game.pellets
-	
-	
+        pellets=game.pellets.pelletList
+        
+
+        
         state = [
 		pacLoc.x,
 		pacLoc.y,
@@ -56,6 +57,7 @@ class Agent:
 		dir_u,
 		dir_d,
 		
+		#Ghost Positions
 		blink.position.x,
 		blink.position.y,
 		
@@ -67,14 +69,31 @@ class Agent:
 		
 		clyde.position.x,
 		clyde.position.y,
+		#Ghost Direction 
+		#These need to be changed so that left and right are not twice up and down.
+		blink.direction,		
+		pink.direction,
+		ink.direction,		
+		clyde.direction,
+		
+		#Open positions for pac man
 		game.pacman.getNewTarget(LEFT) is not game.pacman.node,
 		game.pacman.getNewTarget(RIGHT)is not game.pacman.node,
 		game.pacman.getNewTarget(UP) is not game.pacman.node,
-		game.pacman.getNewTarget(DOWN)is not game.pacman.node
+		game.pacman.getNewTarget(DOWN)is not game.pacman.node,
+		
+		
 		
 
         ]
-
+        #Add the pellets to the list, and show if they are active.
+      
+        pelletLocations=[]
+        for i in pellets:
+               pelletLocations.extend([int(i.eaten)])#Need better boolean. Visible is for special effects
+        
+        state.extend(pelletLocations)
+        print("THERE ARE peles " +str(len(pelletLocations)))
         return np.array(state, dtype=int)
     
     def remember(self, state, action, reward, next_state, done):
@@ -98,7 +117,7 @@ class Agent:
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
         self.epsilon = 80 - self.n_games
-        final_move = [0,0,0,0]#TODO: Change to be all four directions for pac man
+        final_move = [0,0,0,0]
         if random.randint(0,200)<self.epsilon:
             move =random.randint(0,3)
             final_move[move] = 1

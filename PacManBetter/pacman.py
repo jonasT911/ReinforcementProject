@@ -3,6 +3,7 @@ from pygame.locals import *
 from vector import Vector2
 from constants import *
 from entity import Entity
+from sprites import PacmanSprites
 
 class Pacman(Entity):
     def __init__(self,node):
@@ -12,6 +13,7 @@ class Pacman(Entity):
         self.direction = LEFT
         self.alive = True
         self.setBetweenNodes(LEFT)
+        self.sprites = PacmanSprites(self)
     
     def reset(self):
         Entity.reset(self)
@@ -23,7 +25,8 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
     
-    def update(self, dt):	
+    def update(self, dt):
+        self.sprites.update(dt)	
         self.position += self.directions[self.direction]*self.speed*dt
         direction = self.getValidKey()
         if self.overshotTarget():
@@ -61,7 +64,8 @@ class Pacman(Entity):
         
     def eatPellets(self, pelletList):
         for pellet in pelletList:
-             if self.collideCheck(pellet):
+             if self.collideCheck(pellet) and (not pellet.eaten):
+                pellet.eaten=True
                 return pellet
         return None
         

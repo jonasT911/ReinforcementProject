@@ -8,15 +8,17 @@ class Pellet(object):
         self.name = PELLET
         self.position = Vector2(column*TILEWIDTH, row*TILEHEIGHT)
         self.color = WHITE
-        self.radius = int(4 * TILEWIDTH / 16)
-        self.collideRadius = int(4 * TILEWIDTH / 16)
+        self.radius = int(2 * TILEWIDTH / 16)
+        self.collideRadius = int(2 * TILEWIDTH / 16)
         self.points = 10
         self.visible = True
+        self.eaten=False
         
     def render(self, screen):
-        if self.visible:
-            p = self.position.asInt()
-            pygame.draw.circle(screen, self.color, p, self.radius)
+        if self.visible and (not self.eaten):
+            adjust = Vector2(TILEWIDTH, TILEHEIGHT) / 2
+            p = self.position + adjust
+            pygame.draw.circle(screen, self.color, p.asInt(), self.radius)
             
 class PowerPellet(Pellet):
     def __init__(self, row, column):
@@ -66,3 +68,18 @@ class PelletGroup(object):
     def render(self, screen):
         for pellet in self.pelletList:
             pellet.render(screen)
+            
+    def eatPellet(self,pellet):
+        self.eaten=True
+        #self.pelletList.remove(pellet)
+        
+    def finishedLevel(self):
+        done = True
+        for i in self.pelletList:
+            if (not i.eaten):
+                done =False
+        return done
+    
+    
+    
+    
