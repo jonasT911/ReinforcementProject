@@ -25,14 +25,14 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(514,1024,4) 
+        self.model = Linear_QNet(518,1024,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     def penalizeToLastTurn(self,penalty):
         print("Penalizing")
         i=len(self.memory)-1
         openDirections=0
-        while (i>0 and( len(self.memory)-i<3 or openDirections<3)):
+        while (i>0 and( len(self.memory)-i<3 )):
              state, action, reward, next_state,done=self.memory[i]
              reward=reward+penalty
              self.memory[i]=(state, action, reward, next_state, done)
@@ -84,11 +84,11 @@ class Agent:
 		
 		
 		
-		#Ghost Positions
-		#blink.position.x,
-		#blink.position.y,
-		#blink.mode.current == FREIGHT,
-		#blink.mode.current == SPAWN,
+	#	Ghost Positions
+		blink.position.x,
+		blink.position.y,
+		blink.mode.current == FREIGHT,
+		blink.mode.current == SPAWN,
 		
 	#	pink.position.x,
 	#	pink.position.y,
@@ -155,9 +155,12 @@ class Agent:
     def train_short_memory(self, state, action, reward, next_state, done):
         self.trainer.train_step(state, action, reward, next_state, done)
     
+    
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 10 - self.n_games
+        self.epsilon = 20 - self.n_games
+        if (self.epsilon<1):
+            self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
         if random.randint(0,100)<self.epsilon:
             move =random.randint(0,3)
@@ -169,6 +172,7 @@ class Agent:
             final_move[move]=1
         return final_move
         
+        
 def train ():
     static=False
     plot_scores=[]
@@ -176,16 +180,20 @@ def train ():
     total_score=0
     record = 0
     agent = Agent()
-    game = GameController()
+    game = GameController(True)
     game.startGame()
     game.MachineLearning=True
     game.lives=1
     
-    print("At while location")
+
     while True:
         #get old state
         state_old = agent.get_state(game)
-        print(state_old)
+        #print(state_old)
+        
+        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[6],state_old[7])
+        oldDist=d.magnitudeSquared()
+        
         #get move
         final_move = agent.get_action(state_old)
         
@@ -193,20 +201,27 @@ def train ():
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
         
-        if(reward<-990):
-            print("Penalty")
-            agent.penalizeToLastTurn(reward)
+        ##Penalize getting close
+        d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[6],state_new[7])
+  
+        distance= d.magnitudeSquared()
+        print(distance)
+        if(oldDist>distance and distance<1000):
+            reward=reward-100
+        #if(reward<-9):
+        #    print("Penalty")
+        #    agent.penalizeToLastTurn(reward)
      
         if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
             if(static):
-                reward=-40#Standing still penalty
+                reward=reward-40#Standing still penalty
             else:
                 static =True
         else:
             static=False
-        if(reward>0):
-        	
-           
+        
+        
+        if(reward>0):           
             agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
         print("Reward is "+str(reward))   
         
@@ -216,7 +231,7 @@ def train ():
        
         agent.train_short_memory(state_old,final_move,reward,state_new,done)
             #remember
-        if(openDirections>2):#Useless if right now. Was >2
+        if(openDirections>1):#Useless if 1. Was >2
             agent.remember(state_old,final_move,reward,state_new,done)
         
         if done:

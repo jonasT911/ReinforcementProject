@@ -17,17 +17,19 @@ class GameController(object): #TODO: Add play step function
 
     MachineLearning=False
     
-    def __init__(self):
+    def __init__(self,ML=False):
         pygame.init()
+        self.MachineLearning=ML
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background = None
         self.clock = pygame.time.Clock()
         self.level = 0
-        self.pause = Pause(True)
         self.lives = 5
         self.fruit = None
         self.score = 0
-        self.textgroup = TextGroup()
+        if (not MachineLearning):
+            self.pause = Pause(True)
+            self.textgroup = TextGroup()
         self.lifesprites = LifeSprites(self.lives) 
 
     def restartGame(self):

@@ -109,3 +109,9 @@ class Pacman(Entity):
         if dSquared <= rSquared:
             return True
         return False
+        
+    def MLGhostDistance(self, other):
+        d = self.position - other.position
+        dSquared = d.magnitudeSquared()
+        
+        return dSquared
