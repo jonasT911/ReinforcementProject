@@ -14,7 +14,7 @@ from MLfiles.helper import plot
 
 from constants import *
 
-MAX_MEMORY = 100000
+MAX_MEMORY = 1000000
 BATCH_SIZE = 1000
 LR = 0.001
 
@@ -25,28 +25,32 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(530,3048,4) 
+        self.model = Linear_QNet(514,1024,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     def penalizeToLastTurn(self,penalty):
         print("Penalizing")
         i=len(self.memory)-1
         openDirections=0
-        while (i>0 and( len(self.memory)-i<10 or openDirections<3)):
+        while (i>0 and( len(self.memory)-i<3 or openDirections<3)):
              state, action, reward, next_state,done=self.memory[i]
-             reward=rewards-100
+             reward=reward+penalty
              self.memory[i]=(state, action, reward, next_state, done)
              openDirections=int(state[2])+int(state[3])+int(state[4])+int(state[5])
              i=i-1
-    def rewardUntilLastPenalty(self,reward):
-     print("Penalizing")
+             
+    def rewardUntilLastPenalty(self,extraReward):
+        print("Rewarding")
         i=len(self.memory)-1
         openDirections=0
-        while (i>0 and( len(self.memory)-i<10 or openDirections<3)):
-             state, action, reward, next_state,done=self.memory[i]
-             reward=rewards-100
-             self.memory[i]=(state, action, reward, next_state, done)
+        old_reward=0
+        while (i>0 and openDirections<3 and old_reward>=0):
+             state, action, old_reward, next_state,done=self.memory[i]
              openDirections=int(state[2])+int(state[3])+int(state[4])+int(state[5])
+             if(old_reward>0):
+                 reward=old_reward+extraReward
+                 self.memory[i]=(state, action, reward, next_state, done)
+             
              i=i-1
     def get_state(self, game):
     
@@ -81,25 +85,25 @@ class Agent:
 		
 		
 		#Ghost Positions
-		blink.position.x,
-		blink.position.y,
-		blink.mode.current == FREIGHT,
-		blink.mode.current == SPAWN,
+		#blink.position.x,
+		#blink.position.y,
+		#blink.mode.current == FREIGHT,
+		#blink.mode.current == SPAWN,
 		
-		pink.position.x,
-		pink.position.y,
-		pink.mode.current == FREIGHT,
-		pink.mode.current == SPAWN,
+	#	pink.position.x,
+	#	pink.position.y,
+	#	pink.mode.current == FREIGHT,
+	#	pink.mode.current == SPAWN,
+	#	
+	#	ink.position.x,
+	#	ink.position.y,
+	#	ink.mode.current == FREIGHT,
+	#	ink.mode.current == SPAWN,
 		
-		ink.position.x,
-		ink.position.y,
-		ink.mode.current == FREIGHT,
-		ink.mode.current == SPAWN,
-		
-		clyde.position.x,
-		clyde.position.y,
-		clyde.mode.current == FREIGHT,
-		clyde.mode.current == SPAWN,
+	#	clyde.position.x,
+	#	clyde.position.y,
+	#	clyde.mode.current == FREIGHT,
+	#	clyde.mode.current == SPAWN,
 		#Ghost Direction 
 		#These need to be changed so that left and right are not twice up and down.
 	
@@ -153,9 +157,9 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 400 - self.n_games
+        self.epsilon = 10 - self.n_games
         final_move = [0,0,0,0]
-        if random.randint(0,1000)<self.epsilon:
+        if random.randint(0,100)<self.epsilon:
             move =random.randint(0,3)
             final_move[move] = 1
         else:
@@ -166,6 +170,7 @@ class Agent:
         return final_move
         
 def train ():
+    static=False
     plot_scores=[]
     plot_mean_scores= []
     total_score=0
@@ -188,18 +193,30 @@ def train ():
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
         
-        if (game.pacman.getNewTarget(game.pacman.convertMachineToAction(final_move)) is not game.pacman.node):
-            reward=-400
-        if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
-            reward=reward-500
-        if(reward<-99):
+        if(reward<-990):
             print("Penalty")
-        	#agent.penalizeToLastTurn(reward)
+            agent.penalizeToLastTurn(reward)
+     
+        if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
+            if(static):
+                reward=-40#Standing still penalty
+            else:
+                static =True
+        else:
+            static=False
+        if(reward>0):
+        	
+           
+            agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
+        print("Reward is "+str(reward))   
+        
+        
         #train short memory
         openDirections=int(state_old[2])+int(state_old[3])+int(state_old[4])+int(state_old[5])
-        if(openDirections>2):
-            agent.train_short_memory(state_old,final_move,reward,state_new,done)
+       
+        agent.train_short_memory(state_old,final_move,reward,state_new,done)
             #remember
+        if(openDirections>2):#Useless if right now. Was >2
             agent.remember(state_old,final_move,reward,state_new,done)
         
         if done:
