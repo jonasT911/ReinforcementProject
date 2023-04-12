@@ -27,9 +27,11 @@ class GameController(object): #TODO: Add play step function
         self.lives = 5
         self.fruit = None
         self.score = 0
-        if (not MachineLearning):
+        if (not self.MachineLearning):
             self.pause = Pause(True)
-            self.textgroup = TextGroup()
+        else:
+            self.pause = Pause(False)
+        self.textgroup = TextGroup()
         self.lifesprites = LifeSprites(self.lives) 
 
     def restartGame(self):

@@ -25,7 +25,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(518,1024,4) 
+        self.model = Linear_QNet(522,1024,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     def penalizeToLastTurn(self,penalty):
@@ -90,10 +90,10 @@ class Agent:
 		blink.mode.current == FREIGHT,
 		blink.mode.current == SPAWN,
 		
-	#	pink.position.x,
-	#	pink.position.y,
-	#	pink.mode.current == FREIGHT,
-	#	pink.mode.current == SPAWN,
+		pink.position.x,
+		pink.position.y,
+		pink.mode.current == FREIGHT,
+		pink.mode.current == SPAWN,
 	#	
 	#	ink.position.x,
 	#	ink.position.y,
