@@ -25,10 +25,19 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(290,512,4) 
+        self.model = Linear_QNet(46,512,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
-    
+    def penalizeToLastTurn(self,penalty):
+        print("Penalizing")
+        i=len(self.memory)-2
+        memIndex=self.memory[i]
+        states, actions, rewards, next_states,dones=memIndex
+        #7,8,9,10
+        print(memIndex)
+        openDirections=int(states[7])
+        print("Open directions "+str(openDirections))
+        
     def get_state(self, game):
     
       
@@ -60,7 +69,8 @@ class Agent:
 		dir_u,
 		dir_d,
 		
-		#Open positions for pac man
+		#Open positions for pac man 
+		#NOTHING CAN BE PUT IN FRONT OF THESE!
 		game.pacman.getNewTarget(LEFT) is not game.pacman.node,
 		game.pacman.getNewTarget(RIGHT)is not game.pacman.node,
 		game.pacman.getNewTarget(UP) is not game.pacman.node,
@@ -112,11 +122,13 @@ class Agent:
         state.extend(clydeDir)
         
         pelletLocations=[]
-        for i in pellets:
-               pelletLocations.extend([int(i.eaten)])#Need better boolean. Visible is for special effects
-        
-        state.extend(pelletLocations)
-        print("THERE ARE peles " +str(len(pelletLocations)))
+       # for i in pellets:
+        #    if (i.eaten):
+         #      pelletLocations.extend([int(i.eaten)])#Need better boolean. Visible is for special effects
+          #  else
+          #     pelletLocations.extend([-1,-1])#Need better boolean. Visible is for special effects
+        #state.extend(pelletLocations)
+        #print("THERE ARE peles " +str(len(pelletLocations)))
         return np.array(state, dtype=int)
     
     def remember(self, state, action, reward, next_state, done):
@@ -165,7 +177,7 @@ def train ():
     while True:
         #get old state
         state_old = agent.get_state(game)
-        print(state_old)
+        #print(state_old)
         #get move
         final_move = agent.get_action(state_old)
         
@@ -177,6 +189,11 @@ def train ():
         agent.train_short_memory(state_old,final_move,reward,state_new,done)
         
         #remember
+        
+        if(reward<0):
+        	print("Penalty")
+        	#agent.penalizeToLastTurn(reward)
+        	
         agent.remember(state_old,final_move,reward,state_new,done)
         
         if done:

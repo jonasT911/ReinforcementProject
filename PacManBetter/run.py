@@ -121,15 +121,14 @@ class GameController(object): #TODO: Add play step function
     def play_step(self,action): #This is for machine learning code
         old_score=self.score
         deathPenalty=0
-        print("Playing a step") 
+     
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
             self.pacman.machineUpdate(dt,action)
             self.ghosts.update(dt)
-            self.checkPelletEvents()
-            self.checkGhostEvents()
+
             if self.fruit is not None:
                 self.fruit.update(dt)
             self.checkPelletEvents()
@@ -144,7 +143,7 @@ class GameController(object): #TODO: Add play step function
         
         #I may change reward function later
         # I need a penalty for being caught by the ghost
-
+    
         reward=self.score-old_score+deathPenalty
         return reward,game_over,self.score                
                              
@@ -191,6 +190,7 @@ class GameController(object): #TODO: Add play step function
                 self.fruit = None
             
     def checkGhostEvents(self):
+     score=0
      for ghost in self.ghosts:
         if self.pacman.collideGhost(ghost):
             if ghost.mode.current is FREIGHT:
@@ -204,6 +204,8 @@ class GameController(object): #TODO: Add play step function
                 self.nodes.allowHomeAccess(ghost)
             elif ghost.mode.current is not SPAWN:
                      if self.pacman.alive:
+                        
+                         score=-100
                          self.lives -=  1
                          self.lifesprites.removeImage()
                          self.pacman.die()
@@ -219,8 +221,8 @@ class GameController(object): #TODO: Add play step function
                                  self.pacman.reset()
                                  self.ghosts.reset()
                                  self.fruit = None      
-                     return -100
-     return 0
+                     
+     return score
       
     def checkEvents(self):
         for event in pygame.event.get():
