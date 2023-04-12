@@ -34,9 +34,15 @@ class Agent:
         memIndex=self.memory[i]
         states, actions, rewards, next_states,dones=memIndex
         #7,8,9,10
-        print(memIndex)
-        openDirections=int(states[7])
+       
+        openDirections=int(states[6])+int(states[7])+int(states[8])+int(states[9])
         print("Open directions "+str(openDirections))
+        while (i>0 and( len(self.memory)-i<10 or openDirections<3)):
+             state, action, reward, next_state,done=self.memory[i]
+             reward=rewards-100
+             self.memory[i]=(state, action, reward, next_state, done)
+             openDirections=int(states[6])+int(states[7])+int(states[8])+int(states[9])
+             i=i-1
         
     def get_state(self, game):
     
@@ -182,7 +188,7 @@ def train ():
         final_move = agent.get_action(state_old)
         
         #perform move and get new state
-        reward,done,score = game.play_step(final_move)#TODO: This needs to be changed to talk with new AI pacman class
+        reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
         
         #train short memory
@@ -192,7 +198,7 @@ def train ():
         
         if(reward<0):
         	print("Penalty")
-        	#agent.penalizeToLastTurn(reward)
+        	agent.penalizeToLastTurn(reward)
         	
         agent.remember(state_old,final_move,reward,state_new,done)
         
