@@ -44,7 +44,7 @@ class Agent:
         i=len(self.memory)-1
         openDirections=0
         old_reward=0
-        while (i>0 and openDirections<3 and old_reward>=0):
+        while (i>0 and old_reward>=0):
              state, action, old_reward, next_state,done=self.memory[i]
              openDirections=int(state[2])+int(state[3])+int(state[4])+int(state[5])
              if(old_reward>0):
@@ -159,10 +159,10 @@ class Agent:
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
         self.epsilon = 20 - self.n_games
-        if (self.epsilon<1):
-            self.epsilon=1#Always ensures a bit of randomness
+        if (self.epsilon<2):
+            self.epsilon=2#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,100)<self.epsilon:
+        if random.randint(0,50)<self.epsilon:
             move =random.randint(0,3)
             final_move[move] = 1
         else:
@@ -191,8 +191,7 @@ def train ():
         state_old = agent.get_state(game)
         #print(state_old)
         
-        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[6],state_old[7])
-        oldDist=d.magnitudeSquared()
+        
         
         #get move
         final_move = agent.get_action(state_old)
@@ -202,10 +201,18 @@ def train ():
         state_new = agent.get_state(game)
         
         ##Penalize getting close
+        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[6],state_old[7])
+        oldDist=d.magnitudeSquared()
         d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[6],state_new[7])
-  
         distance= d.magnitudeSquared()
-        print(distance)
+        if(oldDist>distance and distance<1000):
+            reward=reward-100
+            
+            
+        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[10],state_old[11])
+        oldDist=d.magnitudeSquared()
+        d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[10],state_new[11])
+        distance= d.magnitudeSquared()
         if(oldDist>distance and distance<1000):
             reward=reward-100
         #if(reward<-9):
@@ -214,7 +221,7 @@ def train ():
      
         if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
             if(static):
-                reward=reward-40#Standing still penalty
+                reward=reward-400#Standing still penalty
             else:
                 static =True
         else:
