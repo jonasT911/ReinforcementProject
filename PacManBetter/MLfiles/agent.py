@@ -14,7 +14,7 @@ from MLfiles.helper import plot
 
 from constants import *
 
-MAX_MEMORY = 1000000
+MAX_MEMORY = 100000
 BATCH_SIZE = 1000
 LR = 0.001
 
@@ -25,7 +25,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(526,2048,4) 
+        self.model = Linear_QNet(526,3048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     def penalizeToLastTurn(self,penalty):
@@ -44,10 +44,10 @@ class Agent:
         i=len(self.memory)-1
         openDirections=0
         old_reward=0
-        while (i>0 and old_reward>=0):
+        while (i>0 and len(self.memory)-i<5):
              state, action, old_reward, next_state,done=self.memory[i]
              openDirections=int(state[2])+int(state[3])+int(state[4])+int(state[5])
-             if(old_reward>0):
+             if(old_reward>=0):
                  reward=old_reward+extraReward
                  self.memory[i]=(state, action, reward, next_state, done)
              
@@ -56,13 +56,15 @@ class Agent:
     def evaluateWholeRun(self,extraReward):
         print("Rewarding")
         i=len(self.memory)-2
-        
-        old_reward=0
+        state, action, old_reward, next_state,done=self.memory[i]
         done = False
+        print("Run rewards are ")
+        print(old_reward)
         while (i>=0 and not done):
              state, action, old_reward, next_state,done=self.memory[i]
-            
+           
              if(not done):
+                 print(old_reward)
                  reward=old_reward+extraReward
                  self.memory[i]=(state, action, reward, next_state, done)          
              i=i-1
@@ -184,11 +186,11 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 20 - self.n_games
-        if (self.epsilon<1):
-            self.epsilon=2#Always ensures a bit of randomness
+        self.epsilon = 40 - self.n_games
+        if (self.epsilon<36/4):
+            self.epsilon=36/4#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,50)<self.epsilon:
+        if random.randint(0,400/4)<self.epsilon:
             move =random.randint(0,3)
             final_move[move] = 1
         else:
@@ -210,7 +212,7 @@ def train ():
     game.startGame()
     game.MachineLearning=True
     game.lives=1
-    
+    mean_score=0
 
     while True:
         #get old state
@@ -226,19 +228,21 @@ def train ():
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
         
-        ##Penalize getting close
+        #print(final_move)
+        #if (game.pacman.getNewTarget(game.pacman.convertMachineToAction(final_move)) is not game.pacman.node):
+        #    print("Selected Wall")
+        #    #reward=reward-5 
+        
+        
+        #Penalize getting close to ghosts
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[6],state_old[7])
         oldDist=d.magnitudeSquared()
         d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[6],state_new[7])
         distance= d.magnitudeSquared()
         if(oldDist>distance and distance<1000):
-            reward=reward-100
             
-        print(final_move)
-        if (game.pacman.getNewTarget(game.pacman.convertMachineToAction(final_move)) is not game.pacman.node):
-            print("Selected Wall")
-            reward=reward-5
-                
+            reward=reward-100
+  
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[10],state_old[11])
         oldDist=d.magnitudeSquared()
         d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[10],state_new[11])
@@ -252,7 +256,7 @@ def train ():
         if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
             if(static):
                 print("Standing Still")
-                reward=reward-400#Standing still penalty
+                reward=reward-15#Standing still penalty
             else:
                 static =True
         else:
@@ -273,12 +277,12 @@ def train ():
             agent.remember(state_old,final_move,reward,state_new,done)
         
         if done:
-            runScore=int(game.score/10 -50)
+            runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             agent.evaluateWholeRun(runScore)
             #train long memory, plot result
             game.restartGame()
-            game.lives=2
+            game.lives=1
            
             
             agent.n_games+=1
