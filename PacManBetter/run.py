@@ -27,11 +27,13 @@ class GameController(object): #TODO: Add play step function
         self.lives = 5
         self.fruit = None
         self.score = 0
+        self.textgroup = TextGroup()
         if (not self.MachineLearning):
             self.pause = Pause(True)
         else:
             self.pause = Pause(False)
-        self.textgroup = TextGroup()
+            self.textgroup.hideText()
+       
         self.lifesprites = LifeSprites(self.lives) 
 
     def restartGame(self):
@@ -253,7 +255,7 @@ class GameController(object): #TODO: Add play step function
                 self.ghosts.inky.startNode.allowAccess(RIGHT, self.ghosts.inky)
             if self.pellets.numEaten == 70:
                 self.ghosts.clyde.startNode.allowAccess(LEFT, self.ghosts.clyde)
-            if pellet.name == POWERPELLET and not self.MachineLearning:
+            if pellet.name == POWERPELLET:
                self.ghosts.startFreight()
             if self.pellets.finishedLevel():#This will need to be changed after I change pellets
                 self.hideEntities()

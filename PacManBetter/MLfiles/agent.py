@@ -25,7 +25,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(522,1024,4) 
+        self.model = Linear_QNet(526,2048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
       
     def penalizeToLastTurn(self,penalty):
@@ -52,6 +52,25 @@ class Agent:
                  self.memory[i]=(state, action, reward, next_state, done)
              
              i=i-1
+             
+    def evaluateWholeRun(self,extraReward):
+        print("Rewarding")
+        i=len(self.memory)-2
+        
+        old_reward=0
+        done = False
+        while (i>=0 and not done):
+             state, action, old_reward, next_state,done=self.memory[i]
+            
+             if(not done):
+                 reward=old_reward+extraReward
+                 self.memory[i]=(state, action, reward, next_state, done)          
+             i=i-1
+        dist=len(self.memory)-i
+        
+        print("MEMORY = "+str(len(self.memory)))
+        print("RUn was length "+str(dist))
+             
     def get_state(self, game):
     
       
@@ -68,7 +87,10 @@ class Agent:
         clyde=game.ghosts.clyde
         pellets=game.pellets.pelletList
         
-
+        dir_l = game.pacman.direction == LEFT
+        dir_r = game.pacman.direction == RIGHT
+        dir_u = game.pacman.direction == UP
+        dir_d = game.pacman.direction == DOWN
         
         state = [
 		pacLoc.x,
@@ -77,10 +99,11 @@ class Agent:
 
 		#Open positions for pac man 
 		#NOTHING CAN BE PUT IN FRONT OF THESE!
-		game.pacman.getNewTarget(LEFT) is not game.pacman.node,
-		game.pacman.getNewTarget(RIGHT)is not game.pacman.node,
 		game.pacman.getNewTarget(UP) is not game.pacman.node,
 		game.pacman.getNewTarget(DOWN)is not game.pacman.node,
+		game.pacman.getNewTarget(LEFT) is not game.pacman.node,
+		game.pacman.getNewTarget(RIGHT)is not game.pacman.node,
+		
 		
 		
 		
@@ -108,7 +131,10 @@ class Agent:
 		#These need to be changed so that left and right are not twice up and down.
 	
 		
-
+		dir_u,
+		dir_d,	
+		dir_l,
+		dir_r
         ]
         #Add the pellets to the list, and show if they are active.
         blinkDir=[0,0,0,0,0]
@@ -159,7 +185,7 @@ class Agent:
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
         self.epsilon = 20 - self.n_games
-        if (self.epsilon<2):
+        if (self.epsilon<1):
             self.epsilon=2#Always ensures a bit of randomness
         final_move = [0,0,0,0]
         if random.randint(0,50)<self.epsilon:
@@ -208,7 +234,11 @@ def train ():
         if(oldDist>distance and distance<1000):
             reward=reward-100
             
-            
+        print(final_move)
+        if (game.pacman.getNewTarget(game.pacman.convertMachineToAction(final_move)) is not game.pacman.node):
+            print("Selected Wall")
+            reward=reward-5
+                
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[10],state_old[11])
         oldDist=d.magnitudeSquared()
         d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[10],state_new[11])
@@ -221,6 +251,7 @@ def train ():
      
         if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
             if(static):
+                print("Standing Still")
                 reward=reward-400#Standing still penalty
             else:
                 static =True
@@ -242,9 +273,14 @@ def train ():
             agent.remember(state_old,final_move,reward,state_new,done)
         
         if done:
+            runScore=int(game.score/10 -50)
+            print("run Score is "+str(runScore))
+            agent.evaluateWholeRun(runScore)
             #train long memory, plot result
             game.restartGame()
-            game.lives=1
+            game.lives=2
+           
+            
             agent.n_games+=1
             #Uncomment this later
             agent.train_long_memory()
