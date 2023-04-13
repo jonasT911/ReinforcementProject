@@ -31,7 +31,11 @@ class QTrainer:
         self.model = model
         self.optimizer=optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
-        
+       
+    def updateLearningRate(self, lr):   
+        for g in  self.optimizer.param_groups:
+            g['lr'] = 0.001
+
     def train_step(self, state,action,reward,next_state,done):
        
         state = torch.tensor(state, dtype=torch.float)

@@ -115,3 +115,17 @@ class Pacman(Entity):
         dSquared = d.magnitudeSquared()
         
         return dSquared
+        
+    def nearestPellet(self,pelletList):
+        nearest=-1
+        returnPellet=pelletList[0]
+        for pellet in pelletList:
+             if (not pellet.eaten):
+                 d = self.position - pellet.position
+                 dSquared = d.magnitudeSquared()
+                 if(nearest==-1 or dSquared<nearest):
+                     nearest=dSquared
+                     returnPellet = pellet
+                 
+        return returnPellet, nearest
+

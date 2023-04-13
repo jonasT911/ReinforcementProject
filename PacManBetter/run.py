@@ -202,7 +202,8 @@ class GameController(object): #TODO: Add play step function
             if ghost.mode.current is FREIGHT:
                 self.pacman.visible = False
                 ghost.visible = False
-                self.updateScore(ghost.points)
+                #Disabling eating bonus for now
+                #self.updateScore(ghost.points)
                 self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
                 self.ghosts.updatePoints()
                 self.pause.setPause(pauseTime=1, func=self.showEntities)
@@ -211,7 +212,7 @@ class GameController(object): #TODO: Add play step function
             elif ghost.mode.current is not SPAWN:
                      if self.pacman.alive:
                         
-                         score=-50
+                         score=-5000
                          self.lives -=  1
                          self.lifesprites.removeImage()
                          self.pacman.die()
