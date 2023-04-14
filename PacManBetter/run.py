@@ -212,7 +212,7 @@ class GameController(object): #TODO: Add play step function
             elif ghost.mode.current is not SPAWN:
                      if self.pacman.alive:
                         
-                         score=-1
+                         score=-100
                          self.lives -=  1
                          self.lifesprites.removeImage()
                          self.pacman.die()
