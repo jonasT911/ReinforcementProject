@@ -133,8 +133,8 @@ class GhostGroup(object):
         return iter(self.ghosts)
 
     def update(self, dt):
-        pass
-    	#self.blinky.update(dt)
+        #pass
+    	self.blinky.update(dt)
     	#self.pinky.update(dt)
         #for ghost in self:
          #   ghost.update(dt)
