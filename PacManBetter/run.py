@@ -128,7 +128,7 @@ class GameController(object): #TODO: Add play step function
         old_score=self.score
         deathPenalty=0
      
-        dt = self.clock.tick(30) / 1000.0 #Can I change this?
+        dt = self.clock.tick(60) / 500.0 #Can I change this?
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
@@ -212,7 +212,7 @@ class GameController(object): #TODO: Add play step function
             elif ghost.mode.current is not SPAWN:
                      if self.pacman.alive:
                         
-                         score=-5000
+                         score=-1
                          self.lives -=  1
                          self.lifesprites.removeImage()
                          self.pacman.die()

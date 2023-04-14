@@ -16,17 +16,21 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.1 #Was .001
+LR = 0.0000000001 #Was .001
+
 
 class Agent:
     
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.9 #discount rate must be smaller than 1
+        self.gamma=0.5 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(30,3048,4) 
+        self.model = Linear_QNet(31,3048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
+        self.holdRandom = 0
+        self.Random_move = [0,0,0,0]
+
       
     def penalizeToLastTurn(self,penalty):
         print("Penalizing")
@@ -167,18 +171,18 @@ class Agent:
         
         ink_Dir=[0,0,0,0,0]
         ink_Dir[2+ink.direction]=1
-        state.extend(ink_Dir)
+        #state.extend(ink_Dir)
         
         pinkDir=[0,0,0,0,0]
         pinkDir[2+pink.direction]=1
-        #state.extend(pinkDir)
+        state.extend(pinkDir)
         
         clydeDir=[0,0,0,0,0]
         clydeDir[2+clyde.direction]=1
         #state.extend(clydeDir)
         
         nearest,nearDistance=game.pacman.nearestPellet(pellets)
-        state.extend([nearest.position.x,nearest.position.y])
+        state.extend([nearest.position.x,nearest.position.y,nearDistance])
         
         pelletLocations=[]
         for i in pellets:
@@ -211,16 +215,26 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 40 - self.n_games
-        if (self.epsilon<5):
-            self.epsilon=8#Always ensures a bit of randomness
-        final_move = [0,0,0,0]
-        if random.randint(0,100)<self.epsilon:
+        self.epsilon = 50 - self.n_games
+        final_move=[0,0,0,0]
+        if (self.epsilon<10):
+            self.epsilon=40#Always ensures a bit of randomness
+        
+        if random.randint(0,500)<self.epsilon:
+            self.holdRandom=3
+            self.Random_move = [0,0,0,0]
             move =random.randint(0,3)
-            final_move[move] = 1
+            self.Random_move[move] = 1
+            
+        if(self.holdRandom>0):
+          
+            final_move=self.Random_move 
+            self.holdRandom-=1
+            
         else:
             state0 =torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
+            print("PacLoc = "+str(state[0])+" , "+str(state[1]))
             print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
             final_move[move]=1
@@ -256,7 +270,7 @@ def train ():
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-        
+        reward=reward*100
         print(final_move)
         print("{"+str(state_old[2])+str(state_old[3])+str(state_old[4])+str(state_old[5])+"}")
 
@@ -268,9 +282,9 @@ def train ():
     
         if( distance<1000  and state_old[12]==0 and  state_old[13]==0 ):
             if (oldDist>distance ):
-                reward=reward-1000
+                reward=reward-1
             else:
-                reward=reward+50
+                reward=reward+5
   
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[14],state_old[15])
         oldDist=d.magnitudeSquared()
@@ -278,9 +292,9 @@ def train ():
         distance= d.magnitudeSquared()
         if(oldDist>distance and distance<1000 and state_old[16]==0 and  state_old[17]==0 ):
             if (oldDist>distance ):
-                reward=reward-1000
+                reward=reward-1
             else:
-                reward=reward+50
+                reward=reward+5
         #if(reward<-9):
         #    print("Penalty")
         #    agent.penalizeToLastTurn(reward)
@@ -288,7 +302,7 @@ def train ():
         if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
             if(static>5):
                 print("Standing Still")
-                reward=reward-50#Standing still penalty
+                #reward=reward-1#Standing still penalty
             else:
                 static +=1
         else:
@@ -300,15 +314,16 @@ def train ():
         else:
             starving+=1
             if(starving>50):
-                agent.starve(starving*-.2)
+                #agent.starve(-1)
+                pass
         
         
         nearest,nearDistance=game.pacman.nearestPellet(game.pellets.pelletList)
         if(nearest==lastPellet):
             if (lastPelletDist>nearDistance):
-                reward=reward+2
+                reward=reward+1
             else:
-                 reward=reward-2
+                reward=reward-2
         lastPelletDist=nearDistance
         lastPellet=nearest    
         print("Reward is "+str(reward))   
@@ -325,10 +340,9 @@ def train ():
         if done:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
-            #agent.evaluateWholeRun(runScore)
+            agent.evaluateWholeRun(runScore)
             #train long memory, plot result
-            game.restartGame()
-            game.lives=1
+            
            
             
             agent.n_games+=1
@@ -347,6 +361,8 @@ def train ():
             plot_mean_scores.append(mean_score)
             plot(plot_scores,plot_mean_scores)
             
+            game.restartGame()
+            game.lives=1
             
 
 if __name__== '__main__':
