@@ -127,7 +127,7 @@ class GameController(object): #TODO: Add play step function
     def play_step(self,action): #This is for machine learning code
         old_score=self.score
         deathPenalty=0
-     
+        gameWon=False
         dt = self.clock.tick(60) / 500.0 #Can I change this?
         self.textgroup.update(dt)
         self.pellets.update(dt)
@@ -137,7 +137,7 @@ class GameController(object): #TODO: Add play step function
 
             if self.fruit is not None:
                 self.fruit.update(dt)
-            self.checkPelletEvents()
+            gameWon=self.checkPelletEvents()
             deathPenalty = self.checkGhostEvents()
             self.checkFruitEvents()
         afterPauseMethod = self.pause.update(dt)
@@ -146,7 +146,7 @@ class GameController(object): #TODO: Add play step function
         self.checkEvents()
         self.render() 
         game_over=(self.lives==0)
-        
+        game_over=(game_over or gameWon)
         #I may change reward function later
         # I need a penalty for being caught by the ghost
     
@@ -260,7 +260,15 @@ class GameController(object): #TODO: Add play step function
                self.ghosts.startFreight()
             if self.pellets.finishedLevel():#This will need to be changed after I change pellets
                 self.hideEntities()
-                self.pause.setPause(pauseTime=3, func=self.nextLevel)
+                print("Victory")
+                if (self.MachineLearning==False):
+                    self.pause.setPause(pauseTime=3, func=self.nextLevel)
+                else: 
+                    self.pacman.reset()
+                    self.ghosts.reset()
+                    self.fruit = None   
+                    return True 
+        return False
 
 
   

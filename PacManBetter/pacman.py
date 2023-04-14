@@ -10,6 +10,7 @@ class Pacman(Entity):
         Entity.__init__(self, node )
         self.name = PACMAN
         self.color = YELLOW
+        self.pointing = LEFT
         self.direction = LEFT
         self.alive = True
         self.setBetweenNodes(LEFT)
@@ -50,7 +51,10 @@ class Pacman(Entity):
     def machineUpdate(self, dt,action):
         self.sprites.update(dt)	
         self.position += self.directions[self.direction]*self.speed*dt
-        direction = self.convertMachineToAction(action)
+        direction = self.drivingControl(action)
+        print("Direction = "+str(direction))
+        oldPoint=self.pointing
+        self.pointing=direction
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
@@ -63,6 +67,7 @@ class Pacman(Entity):
 
             if self.target is self.node:
                 self.direction = STOP
+                self.pointing=oldPoint
             self.setPosition()
         else: 
             if self.oppositeDirection(direction):
@@ -82,7 +87,7 @@ class Pacman(Entity):
         
     def convertMachineToAction(self,machine):
         key_pressed = pygame.key.get_pressed()
-        if machine[0]:
+        if machine[0]:#Forward
             return UP
         if machine[1]:
             return DOWN
@@ -92,6 +97,25 @@ class Pacman(Entity):
             return RIGHT
         return STOP
         
+    def drivingControl(self,machine):
+        if(self.direction != STOP):
+            self.pointing=self.direction
+        directions=[LEFT,UP,RIGHT,DOWN]
+        i=directions.index(self.pointing)
+        key_pressed = pygame.key.get_pressed()
+        if machine[0]:#Forward
+        
+            return self.pointing
+        if machine[1]:#RIGHT
+           
+            return directions[(i+1)%4]
+        if machine[2]:#LEFT
+       
+            return  directions[(i-1)%4]
+        if machine[3]: #Reverse
+         
+            return self.pointing
+        return STOP
     def eatPellets(self, pelletList):
         for pellet in pelletList:
              if self.collideCheck(pellet) and (not pellet.eaten):
