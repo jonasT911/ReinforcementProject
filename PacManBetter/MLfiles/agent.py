@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.000009 #Was .001
+LR = 0.000008 #Was .001
 
 
 
@@ -226,12 +226,12 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 10 - self.n_games
+        self.epsilon = 20 - self.n_games
         if (self.epsilon<0):
-            self.epsilon=10#Always ensures a bit of randomness
+            self.epsilon=5#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,100)<self.epsilon:
-            move =random.randint(0,3)
+        if random.randint(0,200)<self.epsilon:
+            move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
             state0 =torch.tensor(state, dtype = torch.float)
@@ -333,7 +333,7 @@ def train ():
         agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>120:
+        if done or starving>820:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)

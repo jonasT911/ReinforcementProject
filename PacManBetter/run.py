@@ -128,7 +128,7 @@ class GameController(object): #TODO: Add play step function
         old_score=self.score
         deathPenalty=0
         gameWon=False
-        dt = self.clock.tick(30) / 1000.0 #Can I change this?
+        dt = self.clock.tick(120) / 250.0 #Can I change this?
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
