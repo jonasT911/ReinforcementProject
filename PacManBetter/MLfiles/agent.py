@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.000008 #Was .001
+LR = 0.00001 #Was .001
 
 
 
@@ -25,7 +25,7 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.8 #discount rate must be smaller than 1
+        self.gamma=0.0 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.model = Linear_QNet(520,3048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
@@ -228,9 +228,9 @@ class Agent:
         #random moves: tradeoff exploitation/exploration
         self.epsilon = 20 - self.n_games
         if (self.epsilon<0):
-            self.epsilon=5#Always ensures a bit of randomness
+            self.epsilon=10#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,200)<self.epsilon:
+        if random.randint(0,50)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -316,13 +316,13 @@ def train ():
             if(starving>5):
         #        print("Penalty")
                 reward=reward-2
-                agent.penalizeToLastTurn(-1)
+                #agent.penalizeToLastTurn(-1)
         
         
         nearest,nearDistance=game.pacman.nearestPellet(game.pellets.pelletList)
         if(nearest==lastPellet):
             if (lastPelletDist>nearDistance):
-                reward=reward+1
+                reward=reward
             else:
                 reward=reward-0
         lastPelletDist=nearDistance
@@ -333,7 +333,7 @@ def train ():
         agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>820:
+        if done or starving>520:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)
