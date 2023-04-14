@@ -25,7 +25,7 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.1 #discount rate must be smaller than 1
+        self.gamma=0.0 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.model = Linear_QNet(520,3048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
@@ -230,7 +230,7 @@ class Agent:
         if (self.epsilon<0):
             self.epsilon=10#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,100)<self.epsilon:
+        if random.randint(0,50)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -333,7 +333,7 @@ def train ():
         agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>120:
+        if done or starving>520:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)
