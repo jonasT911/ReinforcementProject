@@ -329,8 +329,9 @@ def train ():
         lastPellet=nearest    
         print("Reward is "+str(reward))   
         
-     
-        agent.remember(state_old,final_move,reward,state_new,done)
+        if(not game.pause.paused):
+            agent.train_short_memory(state_old,final_move,reward,state_new,done)
+            agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
         if done or starving>1020:
