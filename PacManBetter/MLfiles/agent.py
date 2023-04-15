@@ -226,11 +226,11 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 20 - self.n_games
+        self.epsilon = 70 - self.n_games
         if (self.epsilon<0):
-            self.epsilon=10#Always ensures a bit of randomness
+            self.epsilon=7#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,20)<self.epsilon:
+        if random.randint(0,70)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
