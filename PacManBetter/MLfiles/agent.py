@@ -134,7 +134,14 @@ class Agent:
         openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
         
         nearest,nearDistance=game.pacman.nearestPellet(pellets)
-      
+        nearestPP, PPDistance=game.pacman.nearestPellet(game.pellets.powerpellets)
+        if(nearestPP==None):
+            PPX=0
+            PPY=0
+        else:
+            PPX=pacLoc.x- nearestPP.position.x
+            PPY=pacLoc.y- nearestPP.position.y
+            
         pelletX=pacLoc.x- nearest.position.x
         pelletY=pacLoc.y- nearest.position.y
         
@@ -151,15 +158,22 @@ class Agent:
             pelletX=pelletY
             pelletY=temp
             
+            temp=PPX
+            PPX=PPY
+            PPY=temp
+            
         if(dir_l or dir_u):
             pelletX=pelletX*-1
-            pelletY=pelletX*-1
+            pelletY=pelletY*-1
             
-            pinkDistX=pelletX*-1
-            pinkDistY=pelletX*-1
+            pinkDistX=pinkDistX*-1
+            pinkDistY=pinkDistY*-1
             
-            blinkDistX=pelletX*-1
-            blinkDistY=pelletX*-1
+            blinkDistX=blinkDistX*-1
+            blinkDistY=blinkDistY*-1
+            
+            PPX=PPX*-1
+            PPY=PPY*-1
         
         state = [
 	

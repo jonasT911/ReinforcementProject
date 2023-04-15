@@ -143,6 +143,8 @@ class Pacman(Entity):
     def nearestPellet(self,pelletList):
         nearest=-1
         returnPellet=pelletList[0]
+        if(len(pelletList)==0)
+            return None,0
         for pellet in pelletList:
              if (not pellet.eaten):
                  d = self.position - pellet.position
