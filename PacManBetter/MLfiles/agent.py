@@ -27,7 +27,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.8 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(520,3048,3) 
+        self.model = Linear_QNet(18,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -113,7 +113,13 @@ class Agent:
         print("Pac location is ("+str(pacLoc.x)+", "+str(pacLoc.y)+")")
         
         blink=game.ghosts.blinky
+        blinkDistX=pacLoc.x-blink.position.x
+        blinkDistY=pacLoc.y-blink.position.y
+        
         pink=game.ghosts.pinky
+        pinkDistX=pacLoc.x- pink.position.x
+        pinkDistY=pacLoc.y- pink.position.y
+        
         ink=game.ghosts.inky
         clyde=game.ghosts.clyde
         pellets=game.pellets.pelletList
@@ -126,6 +132,15 @@ class Agent:
         
         openLeft=game.pacman.getNewTarget(game.pacman.drivingControl([0,0,1,0])) is not game.pacman.node
         openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
+        
+        if(dir_l or dir_r):
+            temp=blinkDistX
+            blinkDistX=blinkDistY
+            blinkDistY=temp
+            
+            temp=pinkDistX
+            pinkDistX=pinkDistY
+            pinkDistY=temp
         
         state = [
 		pacLoc.x,
@@ -146,15 +161,15 @@ class Agent:
 		
 		
 	#	Ghost Positions
-		blink.position.x,
-		blink.position.y,
-		blink.mode.current == FREIGHT,
-		blink.mode.current == SPAWN,
+		blinkDistX,
+		blinkDistY,
+		#blink.mode.current == FREIGHT,
+		#blink.mode.current == SPAWN,
 		
-		pink.position.x,
-		pink.position.y,
-		pink.mode.current == FREIGHT,
-		pink.mode.current == SPAWN,
+		pinkDistX,
+		pinkDistY,
+		#pink.mode.current == FREIGHT,
+		#pink.mode.current == SPAWN,
 	#NOTHING CAN BE PUT IN FRONT OF THIS!
 	#	
 	#	ink.position.x,
@@ -178,7 +193,7 @@ class Agent:
         #Add the pellets to the list, and show if they are active.
         blinkDir=[0,0,0,0,0]
         blinkDir[2+blink.direction]=1
-        state.extend(blinkDir)
+        #state.extend(blinkDir)
         
         ink_Dir=[0,0,0,0,0]
         ink_Dir[2+ink.direction]=1
@@ -186,7 +201,7 @@ class Agent:
         
         pinkDir=[0,0,0,0,0]
         pinkDir[2+pink.direction]=1
-        state.extend(pinkDir)
+        #state.extend(pinkDir)
         
         clydeDir=[0,0,0,0,0]
         clydeDir[2+clyde.direction]=1
@@ -201,7 +216,7 @@ class Agent:
                pelletLocations.extend([i.position.x,i.position.y])#Need better boolean. Visible is for special effects
             else:
                pelletLocations.extend([-1,-1])#Need better boolean. Visible is for special effects
-        state.extend(pelletLocations)
+        #state.extend(pelletLocations)
       
         return np.array(state, dtype=int)
     
@@ -263,7 +278,7 @@ def train ():
         #    agent.trainer.updateLearningRate(.0001)
         #get old state
         state_old = agent.get_state(game)
-        #print(state_old)
+        print(state_old)
         
         
         
@@ -285,9 +300,9 @@ def train ():
     
         if( distance<1000  and state_old[12]==0 and  state_old[13]==0 ):
             if (oldDist>distance ):
-                reward=reward-0.03
+                reward=reward-0.0
             else:
-                reward=reward+.03
+                reward=reward+.0
   
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[14],state_old[15])
         oldDist=d.magnitudeSquared()
@@ -295,20 +310,15 @@ def train ():
         distance= d.magnitudeSquared()
         if(oldDist>distance and distance<1000 and state_old[16]==0 and  state_old[17]==0 ):
             if (oldDist>distance ):
-                reward=reward-0.03
+                reward=reward-0.0
             else:
-                reward=reward+.03
+                reward=reward+.0
                 
 
      
-        if (state_new[0]==state_old[0] and state_new[1]==state_old[1]):
-            if(static>5):
-                print("Standing Still")
-                #reward=reward-1#Standing still penalty
-            else:
-                static +=1
-        else:
-            static=0
+        if (game.pacman.direction==STOP):
+    
+            reward=reward-.02
 
         if(reward>0):           
             agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
@@ -317,7 +327,7 @@ def train ():
             starving+=1
             if(starving>5):
                 print("Penalty")
-                #reward=reward-.002
+                #reward=reward-.0002
                 #agent.penalizeToLastTurn(-1)
         
         
