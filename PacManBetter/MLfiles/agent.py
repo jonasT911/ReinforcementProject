@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.000001 #Was .001
+LR = 0.00005 #Was .001
 
 
 
@@ -27,7 +27,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.8 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(18,2048,3) 
+        self.model = Linear_QNet(17,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -128,10 +128,15 @@ class Agent:
         dir_r = game.pacman.pointing == RIGHT
         dir_u = game.pacman.pointing == UP
         dir_d = game.pacman.pointing == DOWN
-        stopped= game.pacman.direction==STOP
+        stopped=(pacLoc.x==self.previousLocation.x and pacLoc.y==self.previousLocation.y)
         
         openLeft=game.pacman.getNewTarget(game.pacman.drivingControl([0,0,1,0])) is not game.pacman.node
         openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
+        
+        nearest,nearDistance=game.pacman.nearestPellet(pellets)
+      
+        pelletX=pacLoc.x- nearest.position.x
+        pelletY=pacLoc.y- nearest.position.y
         
         if(dir_l or dir_r):
             temp=blinkDistX
@@ -141,15 +146,23 @@ class Agent:
             temp=pinkDistX
             pinkDistX=pinkDistY
             pinkDistY=temp
+            
+            temp=pelletX
+            pelletX=pelletY
+            pelletY=temp
+            
+        if(dir_l or dir_u):
+            pelletX=pelletX*-1
+            pelletY=pelletX*-1
+            
+            pinkDistX=pelletX*-1
+            pinkDistY=pelletX*-1
+            
+            blinkDistX=pelletX*-1
+            blinkDistY=pelletX*-1
         
         state = [
-		pacLoc.x,
-		pacLoc.y,
-		  # Move direction
-
-		#Open positions for pac man 
-		self.previousLocation.x,
-		self.previousLocation.y,
+	
 		openLeft,
 		
 		openRight,
@@ -163,13 +176,13 @@ class Agent:
 	#	Ghost Positions
 		blinkDistX,
 		blinkDistY,
-		#blink.mode.current == FREIGHT,
-		#blink.mode.current == SPAWN,
+		blink.mode.current == FREIGHT,
+		blink.mode.current == SPAWN,
 		
 		pinkDistX,
 		pinkDistY,
-		#pink.mode.current == FREIGHT,
-		#pink.mode.current == SPAWN,
+		pink.mode.current == FREIGHT,
+		pink.mode.current == SPAWN,
 	#NOTHING CAN BE PUT IN FRONT OF THIS!
 	#	
 	#	ink.position.x,
@@ -184,6 +197,8 @@ class Agent:
 		#Ghost Direction 
 		
 	        stopped,
+            pelletX,
+            pelletY,
          
               
         ]
@@ -207,8 +222,7 @@ class Agent:
         clydeDir[2+clyde.direction]=1
         #state.extend(clydeDir)
         
-        nearest,nearDistance=game.pacman.nearestPellet(pellets)
-        state.extend([nearest.position.x,nearest.position.y,nearDistance])
+        
         
         pelletLocations=[]
         for i in pellets:
@@ -241,11 +255,15 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 4 - self.n_games
+        if(self.n_games<5):
+        
+            self.epsilon = 10
+        else:
+            self.epsilon = 1 
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,4)<self.epsilon:
+        if random.randint(0,10)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -290,33 +308,12 @@ def train ():
         state_new = agent.get_state(game)
        
         print(final_move)
-        print("{"+str(state_old[2])+str(state_old[3])+str(state_old[4])+str(state_old[5])+"}")
 
         #Penalize getting close to ghosts
-        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[10],state_old[11])
-        oldDist=d.magnitudeSquared()
-        d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[10],state_new[11])
-        distance= d.magnitudeSquared()
-    
-        if( distance<1000  and state_old[12]==0 and  state_old[13]==0 ):
-            if (oldDist>distance ):
-                reward=reward-0.0
-            else:
-                reward=reward+.0
-  
-        d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[14],state_old[15])
-        oldDist=d.magnitudeSquared()
-        d = Vector2(state_new[0], state_new[1]) - Vector2(state_new[14],state_new[15])
-        distance= d.magnitudeSquared()
-        if(oldDist>distance and distance<1000 and state_old[16]==0 and  state_old[17]==0 ):
-            if (oldDist>distance ):
-                reward=reward-0.0
-            else:
-                reward=reward+.0
-                
 
-     
-        if (game.pacman.direction==STOP):
+  
+
+        if (game.pacman.position.x==agent.previousLocation.x and game.pacman.position.y==agent.previousLocation.y):
     
             reward=reward-.02
 

@@ -114,7 +114,7 @@ class Pacman(Entity):
             return  directions[(i-1)%4]
         if machine[3]: #Reverse
          
-            return self.pointing
+            return self.pointing*-1
         return STOP
     def eatPellets(self, pelletList):
         for pellet in pelletList:
