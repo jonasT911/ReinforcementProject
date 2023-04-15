@@ -27,7 +27,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.8 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(18,2048,3) 
+        self.model = Linear_QNet(22,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -163,13 +163,13 @@ class Agent:
 	#	Ghost Positions
 		blinkDistX,
 		blinkDistY,
-		#blink.mode.current == FREIGHT,
-		#blink.mode.current == SPAWN,
+		blink.mode.current == FREIGHT,
+		blink.mode.current == SPAWN,
 		
 		pinkDistX,
 		pinkDistY,
-		#pink.mode.current == FREIGHT,
-		#pink.mode.current == SPAWN,
+		pink.mode.current == FREIGHT,
+		pink.mode.current == SPAWN,
 	#NOTHING CAN BE PUT IN FRONT OF THIS!
 	#	
 	#	ink.position.x,
@@ -241,11 +241,11 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 4 - self.n_games
+        self.epsilon = 10 - self.n_games
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,4)<self.epsilon:
+        if random.randint(0,10)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
