@@ -104,14 +104,15 @@ class Pacman(Entity):
         i=directions.index(self.pointing)
         key_pressed = pygame.key.get_pressed()
         if machine[0]:#Forward
-        
             return self.pointing
-        if machine[1]:#RIGHT
+            
+        if machine[1]:#LEFT
+            return  directions[(i-1)%4]
+            
+        if machine[2]:#RIGHT
            
             return directions[(i+1)%4]
-        if machine[2]:#LEFT
-       
-            return  directions[(i-1)%4]
+
         if machine[3]: #Reverse
          
             return self.pointing*-1

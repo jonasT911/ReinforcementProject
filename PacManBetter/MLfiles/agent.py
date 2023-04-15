@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.00005 #Was .001
+LR = 0.001 #Was .001
 
 
 
@@ -25,13 +25,14 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.8 #discount rate must be smaller than 1
+        self.gamma=0.6 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(19,2048,3) 
+        self.model = Linear_QNet(21,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
         self.previousLocation= Vector2(0,0)
+        
       
     def penalizeToLastTurn(self,penalty):
         print("Penalizing")
@@ -39,12 +40,16 @@ class Agent:
         openDirections=0
         action=[1,0,0,0]
         reward=10
-        while (i>0 and( action[0] !=1 )and reward<=0):
+        turns=3
+
+        while (i>0 and (turns<2 or len(self.memory)-i<6)):
              state, action, reward, next_state,done=self.memory[i]
              reward=reward+penalty
+             turns=int(state[2])+int(state[3])+int(state[4])
              self.memory[i]=(state, action, reward, next_state, done)
-             openDirections=int(state[2])+int(state[3])+int(state[4])+int(state[5])
+            
              i=i-1
+        print("Penalty length "+str(len(self.memory)-i))
              
     def rewardUntilLastPenalty(self,extraReward):
         print("Rewarding")
@@ -128,7 +133,7 @@ class Agent:
         dir_r = game.pacman.pointing == RIGHT
         dir_u = game.pacman.pointing == UP
         dir_d = game.pacman.pointing == DOWN
-        stopped=(pacLoc.x==self.previousLocation.x and pacLoc.y==self.previousLocation.y)
+        moving=not(pacLoc.x==self.previousLocation.x and pacLoc.y==self.previousLocation.y)
         
         openLeft=game.pacman.getNewTarget(game.pacman.drivingControl([0,0,1,0])) is not game.pacman.node
         openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
@@ -141,6 +146,13 @@ class Agent:
         else:
             PPX=pacLoc.x- nearestPP.position.x
             PPY=pacLoc.y- nearestPP.position.y
+            
+        if(blink.mode.current == FREIGHT):
+            blinkDistX=0
+            blinkDistY=0
+        if(pink.mode.current == FREIGHT):
+            pinkDistX=0
+            pinkDistY=0
             
         pelletX=pacLoc.x- nearest.position.x
         pelletY=pacLoc.y- nearest.position.y
@@ -177,8 +189,10 @@ class Agent:
         
         state = [
 	
+        0,
+        0,
+        moving,
 		openLeft,
-		
 		openRight,
 		dir_u,
 		dir_d,	
@@ -210,7 +224,7 @@ class Agent:
 	#	clyde.mode.current == SPAWN,
 		#Ghost Direction 
 		
-	        stopped,
+	      
             pelletX,
             pelletY,
             PPX,
@@ -271,7 +285,7 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        if(self.n_games<5):
+        if(self.n_games<1):
         
             self.epsilon = 10
         else:
@@ -287,6 +301,8 @@ class Agent:
             prediction = self.model(state0)
             print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
+            if(prediction[move]<0):
+                move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
@@ -303,6 +319,8 @@ def train ():
     game.lives=1
     mean_score=0
     starving =0
+    standingStill=0
+    previousLocation= Vector2(0,0)
     
     lastPellet,lastPelletDist=game.pacman.nearestPellet(game.pellets.pelletList)
 
@@ -323,25 +341,33 @@ def train ():
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
        
+        if(reward<0):
+            agent.penalizeToLastTurn(reward)
+        else:
+            reward *=10
         print(final_move)
 
         #Penalize getting close to ghosts
 
-  
-
-        if (game.pacman.position.x==agent.previousLocation.x and game.pacman.position.y==agent.previousLocation.y):
     
-            reward=reward-.02
-
+        print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(previousLocation.x)+" , " +str(previousLocation.y))
+        if (game.pacman.position.x==previousLocation.x and game.pacman.position.y==previousLocation.y):
+            print("Standing Still")
+            reward=reward-standingStill
+            standingStill+=1
+        else:
+            standingStill=0
+        previousLocation=Vector2(game.pacman.position.x,game.pacman.position.y)
+        
         if(reward>0):           
-            agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
+            #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
             starving=0
         else:
             starving+=1
             if(starving>5):
-                print("Penalty")
-                #reward=reward-.0002
-                #agent.penalizeToLastTurn(-1)
+                
+                #reward=reward-.0002*starving
+                agent.penalizeToLastTurn(-.00002)
         
         
         nearest,nearDistance=game.pacman.nearestPellet(game.pellets.pelletList)
@@ -359,7 +385,7 @@ def train ():
             agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>1020:
+        if done or starving>520:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)
