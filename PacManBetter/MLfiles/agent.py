@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.00001 #Was .001
+LR = 0.001 #Was .001
 
 
 
