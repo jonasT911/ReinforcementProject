@@ -27,7 +27,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.8 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(17,2048,3) 
+        self.model = Linear_QNet(19,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -213,6 +213,8 @@ class Agent:
 	        stopped,
             pelletX,
             pelletY,
+            PPX,
+            PPY,
          
               
         ]

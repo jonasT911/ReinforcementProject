@@ -53,9 +53,9 @@ class PelletGroup(object):
                 if data[row][col] in ['.', '+']:
                     self.pelletList.append(Pellet(row, col))
                 elif data[row][col] in ['P', 'p']:
-                    #pp = PowerPellet(row, col)
-                    self.pelletList.append(Pellet(row, col))
-                    #self.powerpellets.append(pp)
+                    pp = PowerPellet(row, col)
+                    self.pelletList.append(pp)
+                    self.powerpellets.append(pp)
                     
     def readPelletfile(self, textfile):
         return np.loadtxt(textfile, dtype='<U1')
