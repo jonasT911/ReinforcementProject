@@ -22,6 +22,12 @@ class Linear_QNet(nn.Module):
             os.makedirs(model_folder_path)
         file_name=os.path.join(model_folder_path,file_name)
         torch.save(self.state_dict(),file_name)
+     
+    def load(self,modelClass):
+        model_folder_path = './model'
+        model = TheModelClass(*args, **kwargs)
+        model.load_state_dict(torch.load(model_folder_path))
+        model.eval()
         
 class QTrainer:
 

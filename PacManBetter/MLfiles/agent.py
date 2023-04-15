@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.00001 #Was .001
+LR = 0.000001 #Was .001
 
 
 
@@ -226,11 +226,11 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 20 - self.n_games*10
+        self.epsilon = 4 - self.n_games
         if (self.epsilon<0):
-            self.epsilon=2#Always ensures a bit of randomness
+            self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,20)<self.epsilon:
+        if random.randint(0,4)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -285,9 +285,9 @@ def train ():
     
         if( distance<1000  and state_old[12]==0 and  state_old[13]==0 ):
             if (oldDist>distance ):
-                reward=reward-0
+                reward=reward-0.03
             else:
-                reward=reward+0
+                reward=reward+.03
   
         d = Vector2(state_old[0], state_old[1]) - Vector2(state_old[14],state_old[15])
         oldDist=d.magnitudeSquared()
@@ -295,9 +295,9 @@ def train ():
         distance= d.magnitudeSquared()
         if(oldDist>distance and distance<1000 and state_old[16]==0 and  state_old[17]==0 ):
             if (oldDist>distance ):
-                reward=reward-0
+                reward=reward-0.03
             else:
-                reward=reward+0
+                reward=reward+.03
                 
 
      
@@ -316,8 +316,8 @@ def train ():
         else:
             starving+=1
             if(starving>5):
-        #        print("Penalty")
-                reward=reward-.002
+                print("Penalty")
+                #reward=reward-.002
                 #agent.penalizeToLastTurn(-1)
         
         
