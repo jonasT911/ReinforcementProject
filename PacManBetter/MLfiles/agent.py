@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.001 #Was .001
+LR = 0.0001 #Was .001
 
 
 
@@ -340,11 +340,11 @@ def train ():
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-       
+        reward *=10
         if(reward<0):
             agent.penalizeToLastTurn(reward)
-        else:
-            reward *=10
+        
+        
         print(final_move)
 
         #Penalize getting close to ghosts
