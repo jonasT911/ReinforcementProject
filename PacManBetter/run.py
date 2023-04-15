@@ -257,7 +257,8 @@ class GameController(object): #TODO: Add play step function
             if self.pellets.numEaten == 70:
                 self.ghosts.clyde.startNode.allowAccess(LEFT, self.ghosts.clyde)
             if pellet.name == POWERPELLET:
-               self.ghosts.startFreight()
+               pass
+               #self.ghosts.startFreight()
             if self.pellets.finishedLevel():#This will need to be changed after I change pellets
                 self.hideEntities()
                 print("Victory")

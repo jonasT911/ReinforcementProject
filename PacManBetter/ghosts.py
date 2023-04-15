@@ -135,7 +135,7 @@ class GhostGroup(object):
     def update(self, dt):
         #pass
     	self.blinky.update(dt)
-    	#self.pinky.update(dt)
+    	self.pinky.update(dt)
         #for ghost in self:
          #   ghost.update(dt)
 

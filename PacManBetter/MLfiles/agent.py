@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.001 #Was .001
+LR = 0.00001 #Was .001
 
 
 
@@ -25,12 +25,12 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.01 #discount rate must be smaller than 1
+        self.gamma=0.8 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(520,3048,4) 
+        self.model = Linear_QNet(520,3048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
-        self.Random_move = [0,0,0,0]
+        self.Random_move = [0,0,0]
         self.previousLocation= Vector2(0,0)
       
     def penalizeToLastTurn(self,penalty):
@@ -226,11 +226,11 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        self.epsilon = 70 - self.n_games
+        self.epsilon = 20 - self.n_games*10
         if (self.epsilon<0):
-            self.epsilon=7#Always ensures a bit of randomness
+            self.epsilon=2#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,70)<self.epsilon:
+        if random.randint(0,20)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -259,6 +259,8 @@ def train ():
 
     while True:
         print("       ")
+        #if(agent.n_games==2):
+        #    agent.trainer.updateLearningRate(.0001)
         #get old state
         state_old = agent.get_state(game)
         #print(state_old)
@@ -271,7 +273,7 @@ def train ():
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-        reward=reward*10
+       
         print(final_move)
         print("{"+str(state_old[2])+str(state_old[3])+str(state_old[4])+str(state_old[5])+"}")
 
@@ -315,7 +317,7 @@ def train ():
             starving+=1
             if(starving>5):
         #        print("Penalty")
-                reward=reward-0
+                reward=reward-.002
                 #agent.penalizeToLastTurn(-1)
         
         
