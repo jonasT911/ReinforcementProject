@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.0001 #Was .001
+LR = 0.001 #Was .001
 
 
 
@@ -27,7 +27,7 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.6 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(21,2048,3) 
+        self.model = Linear_QNet(19,2048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -188,9 +188,7 @@ class Agent:
             PPY=PPY*-1
         
         state = [
-	
-        0,
-        0,
+
         moving,
 		openLeft,
 		openRight,
@@ -307,6 +305,7 @@ class Agent:
         return final_move
         
 def train ():
+    learningRate=0.01
     static=0
     plot_scores=[]
     plot_mean_scores= []
@@ -326,8 +325,9 @@ def train ():
 
     while True:
         print("       ")
-        #if(agent.n_games==2):
-        #    agent.trainer.updateLearningRate(.0001)
+        if(agent.n_games>0):
+            learningRate=0.01/agent.n_games
+            agent.trainer.updateLearningRate(learningRate)
         #get old state
         state_old = agent.get_state(game)
         print(state_old)
@@ -340,20 +340,22 @@ def train ():
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-        reward *=10
+        
         if(reward<0):
             agent.penalizeToLastTurn(reward)
-        
+        else:
+            reward *=10
         
         print(final_move)
-
+        if(final_move[3]==1):
+            reward-=2
         #Penalize getting close to ghosts
 
     
         print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(previousLocation.x)+" , " +str(previousLocation.y))
         if (game.pacman.position.x==previousLocation.x and game.pacman.position.y==previousLocation.y):
             print("Standing Still")
-            reward=reward-standingStill
+            reward=reward-standingStill*10
             standingStill+=1
         else:
             standingStill=0
@@ -365,9 +367,9 @@ def train ():
         else:
             starving+=1
             if(starving>5):
-                
+                pass
                 #reward=reward-.0002*starving
-                agent.penalizeToLastTurn(-.00002)
+                #agent.penalizeToLastTurn(-.00002)
         
         
         nearest,nearDistance=game.pacman.nearestPellet(game.pellets.pelletList)
