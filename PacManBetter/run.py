@@ -265,7 +265,9 @@ class GameController(object): #TODO: Add play step function
                 if (self.MachineLearning==False):
                     self.pause.setPause(pauseTime=3, func=self.nextLevel)
                 else: 
-                    self.nextLevel()
+                    self.pacman.reset()
+                    self.ghosts.reset()
+                    self.fruit = None   
                     return True 
         return False
 
