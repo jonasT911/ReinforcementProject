@@ -203,7 +203,7 @@ class GameController(object): #TODO: Add play step function
                 self.pacman.visible = False
                 ghost.visible = False
                 #Disabling eating bonus for now
-                #self.updateScore(ghost.points)
+                self.updateScore(ghost.points)
                 self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
                 self.ghosts.updatePoints()
                 self.pause.setPause(pauseTime=1, func=self.showEntities)
@@ -257,6 +257,7 @@ class GameController(object): #TODO: Add play step function
             if self.pellets.numEaten == 70:
                 self.ghosts.clyde.startNode.allowAccess(LEFT, self.ghosts.clyde)
             if pellet.name == POWERPELLET:
+                pass
                 self.ghosts.startFreight()
             if self.pellets.finishedLevel():#This will need to be changed after I change pellets
                 self.hideEntities()
