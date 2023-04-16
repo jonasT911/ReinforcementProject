@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.0001 #Was .001
+LR = 0.001 #Was .001
 
 
 
@@ -27,12 +27,18 @@ class Agent:
         self.epsilon = 0 #controls randomness      
         self.gamma=0.99 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(19,2048,4) 
+        self.model = Linear_QNet(19,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
         self.previousLocation= Vector2(0,0)
         
+    def nearestGhost(self,pacman,ghosts):
+        nearestDist=pacman.MLGhostDistance(ghosts.ghosts[0])
+        for i in ghosts:
+            nearestDist=min(nearestDist,pacman.MLGhostDistance(i))
+            
+        return nearestDist
       
     def penalizeToLastTurn(self,penalty):
         print("Penalizing")
@@ -316,7 +322,7 @@ class Agent:
             print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
             if(prediction[move]<0):
-                move =random.randint(0,3) #Dropped to 2 while I can not reverse
+                move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
@@ -340,7 +346,8 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
     game.ghosts.activate=[blinkyStart<=0,pinkyStart<=0,inkyStart<=0,clydeStart<=0]
     
     lastPellet,lastPelletDist=game.pacman.nearestPellet(game.pellets.pelletList)
-
+    oldDist=0
+    
     while True:
         print("       ")
         #if(agent.n_games>0):
@@ -350,7 +357,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         state_old = agent.get_state(game)
         print(state_old)
         
-        
+       
         
         #get move
         final_move = agent.get_action(state_old)
@@ -361,9 +368,16 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         
         if(reward<0):
             agent.penalizeToLastTurn(reward)
-        else:
-            reward *=10
         
+        reward *=10
+        
+        ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
+         
+        print(ghostDist)
+        if(ghostDist<oldDist and ghostDist<400):
+            print("TOO CLOSW")
+            reward-=10
+        oldDist=ghostDist
         print(final_move)
         if(final_move[3]==1):
             reward-=.5
@@ -373,7 +387,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(previousLocation.x)+" , " +str(previousLocation.y))
         if (game.pacman.position.x==previousLocation.x and game.pacman.position.y==previousLocation.y):
             print("Standing Still")
-            reward=reward-.2
+            reward=reward-2*standingStill
             standingStill+=1
         else:
             standingStill=0
