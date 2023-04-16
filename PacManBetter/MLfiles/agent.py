@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
-LR = 0.001 #Was .001
+LR = 0.0001 #Was .001
 
 
 
@@ -25,7 +25,7 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.6 #discount rate must be smaller than 1
+        self.gamma=0.99 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.model = Linear_QNet(19,2048,4) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
@@ -126,7 +126,13 @@ class Agent:
         pinkDistY=pacLoc.y- pink.position.y
         
         ink=game.ghosts.inky
+        inkDistX=pacLoc.x- ink.position.x
+        inkDistY=pacLoc.y- ink.position.y
+        
         clyde=game.ghosts.clyde
+        clydeDistX=pacLoc.x- clyde.position.x
+        clydeDistY=pacLoc.y- clyde.position.y
+        
         pellets=game.pellets.pelletList
         
         dir_l = game.pacman.pointing == LEFT
@@ -147,12 +153,7 @@ class Agent:
             PPX=pacLoc.x- nearestPP.position.x
             PPY=pacLoc.y- nearestPP.position.y
             
-        if(blink.mode.current == FREIGHT):
-            blinkDistX=0
-            blinkDistY=0
-        if(pink.mode.current == FREIGHT):
-            pinkDistX=0
-            pinkDistY=0
+
             
         pelletX=pacLoc.x- nearest.position.x
         pelletY=pacLoc.y- nearest.position.y
@@ -165,6 +166,15 @@ class Agent:
             temp=pinkDistX
             pinkDistX=pinkDistY
             pinkDistY=temp
+            
+            temp=inkDistX
+            inkDistX=inkDistY
+            inkDistY=temp
+            
+            temp=clydeDistX
+            clydeDistX=clydeDistY
+            clydeDistY=temp
+            
             
             temp=pelletX
             pelletX=pelletY
@@ -180,7 +190,13 @@ class Agent:
             
             pinkDistX=pinkDistX*-1
             pinkDistY=pinkDistY*-1
+           
+            inkDistX=inkDistX*-1
+            inkDistY=inkDistY*-1
             
+            clydeDistX=clydeDistX*-1
+            clydeDistY=clydeDistY*-1
+           
             blinkDistX=blinkDistX*-1
             blinkDistY=blinkDistY*-1
             
@@ -300,11 +316,11 @@ class Agent:
             print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
             if(prediction[move]<0):
-                move =random.randint(0,2) #Dropped to 2 while I can not reverse
+                move =random.randint(0,3) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
-def train ():
+def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
     learningRate=0.01
     static=0
     plot_scores=[]
@@ -313,7 +329,7 @@ def train ():
     record = 0
     agent = Agent()
     game = GameController(True)
-    game.startGame()
+    game.startGame(PPStart<=0)
     game.MachineLearning=True
     game.lives=1
     mean_score=0
@@ -321,13 +337,15 @@ def train ():
     standingStill=0
     previousLocation= Vector2(0,0)
     
+    game.ghosts.activate=[blinkyStart<=0,pinkyStart<=0,inkyStart<=0,clydeStart<=0]
+    
     lastPellet,lastPelletDist=game.pacman.nearestPellet(game.pellets.pelletList)
 
     while True:
         print("       ")
-        if(agent.n_games>0):
-            learningRate=0.01/agent.n_games
-            agent.trainer.updateLearningRate(learningRate)
+        #if(agent.n_games>0):
+        #    learningRate=0.01/agent.n_games
+        #    agent.trainer.updateLearningRate(learningRate)
         #get old state
         state_old = agent.get_state(game)
         print(state_old)
@@ -348,14 +366,14 @@ def train ():
         
         print(final_move)
         if(final_move[3]==1):
-            reward-=2
+            reward-=.5
         #Penalize getting close to ghosts
 
     
         print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(previousLocation.x)+" , " +str(previousLocation.y))
         if (game.pacman.position.x==previousLocation.x and game.pacman.position.y==previousLocation.y):
             print("Standing Still")
-            reward=reward-standingStill*10
+            reward=reward-.2
             standingStill+=1
         else:
             standingStill=0
@@ -366,20 +384,9 @@ def train ():
             starving=0
         else:
             starving+=1
-            if(starving>5):
-                pass
-                #reward=reward-.0002*starving
-                #agent.penalizeToLastTurn(-.00002)
+
         
-        
-        nearest,nearDistance=game.pacman.nearestPellet(game.pellets.pelletList)
-        if(nearest==lastPellet):
-            if (lastPelletDist>nearDistance):
-                reward=reward
-            else:
-                reward=reward-0
-        lastPelletDist=nearDistance
-        lastPellet=nearest    
+    
         print("Reward is "+str(reward))   
         
         if(not game.pause.paused):
@@ -410,10 +417,10 @@ def train ():
             mean_score = total_score/agent.n_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores,plot_mean_scores)
-            
-            game.restartGame()
+      
+            game.restartGame(PPStart<=agent.n_games)
             game.lives=1
-            
+            game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]
 
 if __name__== '__main__':
 	print("Begin ML Pac-Man")

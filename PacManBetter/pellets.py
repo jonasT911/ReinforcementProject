@@ -36,11 +36,13 @@ class PowerPellet(Pellet):
             self.timer = 0
             
 class PelletGroup(object):
-    def __init__(self, pelletfile):
+    def __init__(self, pelletfile,makePower=True):
         self.pelletList = []
         self.powerpellets = []
+        self.makePower=makePower
         self.createPelletList(pelletfile)
         self.numEaten = 0
+        
 
     def update(self, dt):
         for powerpellet in self.powerpellets:
@@ -53,9 +55,12 @@ class PelletGroup(object):
                 if data[row][col] in ['.', '+']:
                     self.pelletList.append(Pellet(row, col))
                 elif data[row][col] in ['P', 'p']:
-                    pp = PowerPellet(row, col)
-                    self.pelletList.append(pp)
-                    self.powerpellets.append(pp)
+                    if(self.makePower):
+                        pp = PowerPellet(row, col)
+                        self.pelletList.append(pp)
+                        self.powerpellets.append(pp)
+                    else: 
+                        self.pelletList.append(Pellet(row, col))
                     
     def readPelletfile(self, textfile):
         return np.loadtxt(textfile, dtype='<U1')

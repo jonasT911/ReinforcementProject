@@ -36,12 +36,12 @@ class GameController(object): #TODO: Add play step function
        
         self.lifesprites = LifeSprites(self.lives) 
 
-    def restartGame(self):
+    def restartGame(self,MakePP=True):
         self.lives = 5
         self.level = 0
         
         self.fruit = None
-        self.startGame()
+        self.startGame(MakePP)
         self.score = 0
         self.textgroup.updateScore(self.score)
         self.textgroup.updateLevel(self.level)
@@ -68,7 +68,7 @@ class GameController(object): #TODO: Add play step function
         self.background = pygame.surface.Surface(SCREENSIZE).convert()
         self.background.fill(BLACK)
 
-    def startGame(self):
+    def startGame(self,makePowerPellets=True):
         mazeType="maze1.txt"
         self.setBackground()
         self.mazesprites = MazeSprites("maze1.txt", "maze1_rotation.txt")
@@ -80,7 +80,7 @@ class GameController(object): #TODO: Add play step function
         self.nodes.connectHomeNodes(homekey, (12,14), LEFT)
         self.nodes.connectHomeNodes(homekey, (15,14), RIGHT)
         self.pacman = Pacman(self.nodes.getNodeFromTiles(15, 26))
-        self.pellets = PelletGroup(mazeType)
+        self.pellets = PelletGroup(mazeType,makePowerPellets)
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman )
         self.ghosts.blinky.setStartNode(self.nodes.getNodeFromTiles(2+11.5, 0+14))
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(2+11.5, 3+14))
@@ -203,7 +203,7 @@ class GameController(object): #TODO: Add play step function
                 self.pacman.visible = False
                 ghost.visible = False
                 #Disabling eating bonus for now
-                self.updateScore(ghost.points)
+                #self.updateScore(ghost.points)
                 self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
                 self.ghosts.updatePoints()
                 self.pause.setPause(pauseTime=1, func=self.showEntities)

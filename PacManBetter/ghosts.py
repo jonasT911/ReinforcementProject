@@ -128,16 +128,19 @@ class GhostGroup(object):
         self.inky = Inky(node, pacman, self.blinky)
         self.clyde = Clyde(node, pacman)
         self.ghosts = [self.blinky, self.pinky, self.inky, self.clyde]
+        
+        self.activate=[True,True,True,True]
 
     def __iter__(self):
         return iter(self.ghosts)
 
     def update(self, dt):
         #pass
-    	self.blinky.update(dt)
-    	self.pinky.update(dt)
-        #for ghost in self:
-         #   ghost.update(dt)
+    	#self.blinky.update(dt)
+    	#self.pinky.update(dt)
+        for i in range(len(self.ghosts)):
+            if(self.activate[i]):
+                self.ghosts[i].update(dt)
 
     def startFreight(self):
         for ghost in self:
