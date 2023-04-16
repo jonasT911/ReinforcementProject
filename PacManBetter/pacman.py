@@ -50,8 +50,9 @@ class Pacman(Entity):
 
     def machineUpdate(self, dt,action):
         self.sprites.update(dt)	
-        self.position += self.directions[self.direction]*self.speed*dt
         direction = self.drivingControl(action)
+        self.position += self.directions[self.direction]*self.speed*dt
+      
         print("Direction = "+str(direction))
         oldPoint=self.pointing
         self.pointing=direction

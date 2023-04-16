@@ -42,12 +42,13 @@ class QTrainer:
         for g in  self.optimizer.param_groups:
             g['lr'] = 0.001
 
-    def train_step(self, state,action,reward,next_state,done):
+    def train_step(self, state,action,reward,next_state,done,impulse=False):
        
         state = torch.tensor(state, dtype=torch.float)
         next_state=torch.tensor(next_state,dtype=torch.float)
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
+        
         
         if len(state.shape) == 1 :
             state = torch.unsqueeze(state,0)
@@ -62,10 +63,13 @@ class QTrainer:
             Q_new = reward[idx]
             if not done[idx]:
                 Q_new = reward[idx] + self.gamma *torch.max(self.model(next_state[idx]))
-       
+                
+            temp=target[idx][torch.argmax(action).item()]
             target[idx][torch.argmax(action).item()] = Q_new
             
         self.optimizer.zero_grad()
         loss = self.criterion(target,pred)
         loss.backward()
         self.optimizer.step()
+        if(impulse):
+            target[0][torch.argmax(action).item()] = temp

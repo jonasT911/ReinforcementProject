@@ -15,7 +15,7 @@ from MLfiles.helper import plot
 from constants import *
 
 MAX_MEMORY = 100000
-BATCH_SIZE = 1000
+BATCH_SIZE = 10
 LR = 0.001 #Was .001
 
 
@@ -25,9 +25,10 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.99 #discount rate must be smaller than 1
+        self.gamma=0.73 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(19,2048,3) 
+        self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
+        self.model = Linear_QNet(29,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -48,10 +49,13 @@ class Agent:
         reward=10
         turns=3
 
-        while (i>0 and (turns<2 or len(self.memory)-i<6)):
+        while (i>0 and (turns<2 or len(self.memory)-i<3)):
              state, action, reward, next_state,done=self.memory[i]
-             reward=reward+penalty
+             
              turns=int(state[2])+int(state[3])+int(state[4])
+             
+             if(turns<2):
+                 reward=reward+penalty
              self.memory[i]=(state, action, reward, next_state, done)
             
              i=i-1
@@ -121,7 +125,7 @@ class Agent:
 	#For my paper's purpose: ghost behavior.
 	
         pacLoc = game.pacman.position
-        print("Pac location is ("+str(pacLoc.x)+", "+str(pacLoc.y)+")")
+        
         
         blink=game.ghosts.blinky
         blinkDistX=pacLoc.x-blink.position.x
@@ -145,10 +149,10 @@ class Agent:
         dir_r = game.pacman.pointing == RIGHT
         dir_u = game.pacman.pointing == UP
         dir_d = game.pacman.pointing == DOWN
-        moving=not(pacLoc.x==self.previousLocation.x and pacLoc.y==self.previousLocation.y)
-        
-        openLeft=game.pacman.getNewTarget(game.pacman.drivingControl([0,0,1,0])) is not game.pacman.node
-        openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
+        moving=not((pacLoc.x==self.previousLocation.x) and (pacLoc.y==self.previousLocation.y))
+       
+        openLeft=game.pacman.getNewTarget(game.pacman.drivingControl([0,1,0,0])) is not game.pacman.node
+        openRight=game.pacman.getNewTarget(game.pacman.drivingControl([0,0,1,0])) is not game.pacman.node
         
         nearest,nearDistance=game.pacman.nearestPellet(pellets)
         nearestPP, PPDistance=game.pacman.nearestPellet(game.pellets.powerpellets)
@@ -210,6 +214,8 @@ class Agent:
             PPY=PPY*-1
         
         state = [
+        pacLoc.x,
+        pacLoc.y,
 
         moving,
 		openLeft,
@@ -231,17 +237,16 @@ class Agent:
 		pinkDistY,
 		pink.mode.current == FREIGHT,
 		pink.mode.current == SPAWN,
-	#NOTHING CAN BE PUT IN FRONT OF THIS!
-	#	
-	#	ink.position.x,
-	#	ink.position.y,
-	#	ink.mode.current == FREIGHT,
-	#	ink.mode.current == SPAWN,
+
+		ink.position.x,
+		ink.position.y,
+		ink.mode.current == FREIGHT,
+		ink.mode.current == SPAWN,
 		
-	#	clyde.position.x,
-	#	clyde.position.y,
-	#	clyde.mode.current == FREIGHT,
-	#	clyde.mode.current == SPAWN,
+		clyde.position.x,
+		clyde.position.y,
+		clyde.mode.current == FREIGHT,
+		clyde.mode.current == SPAWN,
 		#Ghost Direction 
 		
 	      
@@ -253,7 +258,7 @@ class Agent:
               
         ]
         
-        self.previousLocation=pacLoc
+
         
         #Add the pellets to the list, and show if they are active.
         blinkDir=[0,0,0,0,0]
@@ -277,15 +282,16 @@ class Agent:
         pelletLocations=[]
         for i in pellets:
             if (not i.eaten):
-               pelletLocations.extend([i.position.x,i.position.y])#Need better boolean. Visible is for special effects
+               pelletLocations.extend([i.position.x,i.position.y])
             else:
-               pelletLocations.extend([-1,-1])#Need better boolean. Visible is for special effects
+               pelletLocations.extend([-1,-1])
         #state.extend(pelletLocations)
       
         return np.array(state, dtype=int)
     
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))#If this exceeds max mem then pop left
+        self.runMemory.append((state, action, reward, next_state, done))#If this exceeds max mem then pop left
     
     def train_long_memory(self):
 	
@@ -299,13 +305,25 @@ class Agent:
         states, actions, rewards, next_states,dones = zip (*mini_sample)
         self.trainer.train_step(states, actions, rewards, next_states, dones)
         
-    def train_short_memory(self, state, action, reward, next_state, done):
-        self.trainer.train_step(state, action, reward, next_state, done)
+    def train_run_memory(self):
+	
+        #Can be changed later
+        print("Long memory")
+        i = 0
+
+        mini_sample = self.runMemory
+        
+        states, actions, rewards, next_states,dones = zip (*mini_sample)
+        self.trainer.train_step(states, actions, rewards, next_states, dones)
+        self.runMemory = deque(maxlen = MAX_MEMORY)
+        
+    def train_short_memory(self, state, action, reward, next_state, done,impulse=False):
+        self.trainer.train_step(state, action, reward, next_state, done,impulse)
     
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        if(self.n_games<1):
+        if(self.n_games<2):
         
             self.epsilon = 10
         else:
@@ -313,7 +331,7 @@ class Agent:
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,10)<self.epsilon:
+        if random.randint(0,10)<=self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -341,7 +359,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
     mean_score=0
     starving =0
     standingStill=0
-    previousLocation= Vector2(0,0)
+    agent.previousLocation= Vector2(0,0)
     
     game.ghosts.activate=[blinkyStart<=0,pinkyStart<=0,inkyStart<=0,clydeStart<=0]
     
@@ -355,10 +373,10 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         #    agent.trainer.updateLearningRate(learningRate)
         #get old state
         state_old = agent.get_state(game)
-        print(state_old)
+        #print(state_old)
         
        
-        
+        agent.previousLocation=Vector2(game.pacman.position.x,game.pacman.position.y)
         #get move
         final_move = agent.get_action(state_old)
         
@@ -370,13 +388,22 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             agent.penalizeToLastTurn(reward)
         
         reward *=10
+        if(reward>0):           
+            #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
+            starving=0
+           
+        else:
+            starving+=1
+            if(starving>30):
+                reward-=2
+
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
         print(ghostDist)
         if(ghostDist<oldDist and ghostDist<400):
             print("TOO CLOSW")
-            reward-=10
+            reward-=.1
         oldDist=ghostDist
         print(final_move)
         if(final_move[3]==1):
@@ -384,31 +411,33 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         #Penalize getting close to ghosts
 
     
-        print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(previousLocation.x)+" , " +str(previousLocation.y))
-        if (game.pacman.position.x==previousLocation.x and game.pacman.position.y==previousLocation.y):
+        print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(agent.previousLocation.x)+" , " +str(agent.previousLocation.y))
+        if (game.pacman.position.x==agent.previousLocation.x and game.pacman.position.y==agent.previousLocation.y):
             print("Standing Still")
-            reward=reward-2*standingStill
+            reward=reward
             standingStill+=1
         else:
             standingStill=0
-        previousLocation=Vector2(game.pacman.position.x,game.pacman.position.y)
+            reward=reward
+       
         
-        if(reward>0):           
-            #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
-            starving=0
-        else:
-            starving+=1
 
-        
     
         print("Reward is "+str(reward))   
         
         if(not game.pause.paused):
+            print("STATE OLD " + str(state_old[2:5]))
+            if(sum(state_old[2:5]&final_move[0:3])==0):
+                #Missed open area
+                print("Wrong")
+                agent.train_short_memory(state_old,final_move,reward-100,state_new,done,True)
+            else:
+                print("Correct")
             agent.train_short_memory(state_old,final_move,reward,state_new,done)
             agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>520:
+        if done or starving>220:
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)
@@ -419,6 +448,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             agent.n_games+=1
             #Uncomment this later
             agent.train_long_memory()
+            agent.train_run_memory()
             
             if score>record :
                 record=score
