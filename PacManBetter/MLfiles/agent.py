@@ -318,7 +318,7 @@ class Agent:
     def train_long_memory(self):
 	
         #Can be changed later
-        print("Long memory")
+       
         if len(self.memory)>BATCH_SIZE:
             mini_sample = random.sample(self.memory, BATCH_SIZE) #returns list of tuples
         else:
@@ -330,7 +330,7 @@ class Agent:
     def train_run_memory(self):
         
         #Can be changed later
-        print("Long memory")
+       
         i = 0
 
         mini_sample = self.runMemory
@@ -363,9 +363,10 @@ class Agent:
         else:
             state0 =torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
-            print("Prediction: "+str(prediction))
+            if(not self.load):
+                print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
-            if(prediction[move]<0 and not load):
+            if(prediction[move]<0 and not self.load):
                 move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
@@ -393,7 +394,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
     oldDist=0
     
     while True:
-        print("       ")
+       
         #if(agent.n_games>0):
         #    learningRate=0.01/agent.n_games
         #    agent.trainer.updateLearningRate(learningRate)
@@ -430,39 +431,27 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
-        print(ghostDist)
-        if(ghostDist<oldDist and ghostDist<400):
-            print("TOO CLOSW")
-            reward-=.1
-        oldDist=ghostDist
+       
         print(final_move)
         if(final_move[3]==1):
             reward-=.5
         #Penalize getting close to ghosts
 
     
-        print(str(game.pacman.position.x)+" , " +str(game.pacman.position.y)+ " vs " +str(agent.previousLocation.x)+" , " +str(agent.previousLocation.y))
-        if (game.pacman.position.x==agent.previousLocation.x and game.pacman.position.y==agent.previousLocation.y):
-            print("Standing Still")
-            reward=reward
-            standingStill+=1
-        else:
-            standingStill=0
-            reward=reward
+
        
         
 
-    
-        print("Reward is "+str(reward))   
-        
         if(not game.pause.paused and not load):
             print("STATE OLD " + str(state_old[2:5]))
             if(sum(state_old[2:5]&final_move[0:3])==0):
+                if(not agent.load):
                 #Missed open area
-                print("Wrong")
-               # agent.train_short_memory(state_old,final_move,reward-2,state_new,done,True)
+                    print("Wrong")
+                    agent.train_short_memory(state_old,final_move,reward-5,state_new,done,True)
             else:
-                print("Correct")
+                if(not agent.load):
+                    print("Correct")
             agent.train_short_memory(state_old,final_move,reward,state_new,done)
             agent.remember(state_old,final_move,reward,state_new,done)
         
@@ -487,8 +476,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
                 record=score
             if(not load):
                 agent.model.save()
-                
-            print('Game',agent.n_games, 'Score',score,'Record:',record)
+         
             #Plot
             
             plot_scores.append(score)
@@ -496,7 +484,8 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             mean_score = total_score/agent.n_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores)
-      
+             
+            print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
             game.restartGame(PPStart<=agent.n_games)
             game.lives=1
             game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]

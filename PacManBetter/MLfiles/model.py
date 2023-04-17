@@ -38,7 +38,7 @@ class QTrainer:
             g['lr'] = 0.001
             
     def load(self):
-        model_folder_path = './model/MyModel.pth'
+        model_folder_path = './model/model.pth'
         #model = TheModelClass(*args, **kwargs)
        
         self.model.load_state_dict(torch.load(model_folder_path))
