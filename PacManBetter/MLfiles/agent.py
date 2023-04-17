@@ -341,11 +341,11 @@ class Agent:
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
 
-        self.epsilon = 0 
+        self.epsilon = 1 
         if (self.epsilon<0):
-            self.epsilon=0#Always ensures a bit of randomness
+            self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,10)<self.epsilon:
+        if random.randint(0,100)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -410,9 +410,10 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         else:
             starving+=1
             if(starving>30):
-                reward-=.05*starving
-            if(starving>220):
-                reward=-220
+                pass
+               # reward-=.05*starving
+            if(starving>320):
+                reward=-200
         
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
@@ -454,7 +455,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>220:
+        if done or starving>320:
             
             
             runScore=int((game.score -mean_score)/10)
@@ -471,7 +472,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             
             if score>record :
                 record=score
-                agent.model.save()
+            agent.model.save()
             print('Game',agent.n_games, 'Score',score,'Record:',record)
             #Plot
             
@@ -479,7 +480,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             total_score+=score
             mean_score = total_score/agent.n_games
             plot_mean_scores.append(mean_score)
-            plot(plot_scores,plot_mean_scores)
+            plot(plot_scores)
       
             game.restartGame(PPStart<=agent.n_games)
             game.lives=1
