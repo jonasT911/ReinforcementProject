@@ -22,14 +22,21 @@ LR = 0.00002 #Was .001
 
 class Agent:
     
-    def __init__(self):
+    def __init__(self,load=False):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
+       
         self.model = Linear_QNet(521,2048,3) 
+
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
+        self.load=load
+        
+        if(load):
+            self.trainer.load()
+            
         self.holdRandom = 0
         self.Random_move = [0,0,0]
         self.previousLocation= Vector2(0,0)
@@ -342,10 +349,15 @@ class Agent:
         #random moves: tradeoff exploitation/exploration
 
         self.epsilon = 1 
+       
+        if(self.load):
+            randLimit =100
+        else:
+            randLimit =20
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,20)<self.epsilon:
+        if random.randint(0,randLimit)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -353,19 +365,19 @@ class Agent:
             prediction = self.model(state0)
             print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
-            if(prediction[move]<0):
+            if(prediction[move]<0 and not load):
                 move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
-def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
+def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=False):
     learningRate=0.01
     static=0
     plot_scores=[]
     plot_mean_scores= []
     total_score=0
     record = 0
-    agent = Agent()
+    agent = Agent(load)
     game = GameController(True)
     game.startGame(PPStart<=0)
     game.MachineLearning=True
@@ -443,7 +455,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
     
         print("Reward is "+str(reward))   
         
-        if(not game.pause.paused):
+        if(not game.pause.paused and not load):
             print("STATE OLD " + str(state_old[2:5]))
             if(sum(state_old[2:5]&final_move[0:3])==0):
                 #Missed open area
@@ -455,7 +467,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             agent.remember(state_old,final_move,reward,state_new,done)
         
         #Game ends
-        if done or starving>320:
+        if done or (starving>320 and not load):
             
             
             runScore=int((game.score -mean_score)/10)
@@ -467,12 +479,15 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             
             agent.n_games+=1
             #Uncomment this later
-            agent.train_long_memory()
-            agent.train_run_memory()
+            if(not load):
+                agent.train_long_memory()
+                agent.train_run_memory()
             
             if score>record :
                 record=score
-            agent.model.save()
+            if(not load):
+                agent.model.save()
+                
             print('Game',agent.n_games, 'Score',score,'Record:',record)
             #Plot
             

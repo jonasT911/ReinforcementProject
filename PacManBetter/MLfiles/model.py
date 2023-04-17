@@ -23,12 +23,7 @@ class Linear_QNet(nn.Module):
         file_name=os.path.join(model_folder_path,file_name)
         torch.save(self.state_dict(),file_name)
      
-    def load(self,modelClass):
-        model_folder_path = './model'
-        model = TheModelClass(*args, **kwargs)
-        model.load_state_dict(torch.load(model_folder_path))
-        model.eval()
-        
+
 class QTrainer:
 
     def __init__(self,model,lr,gamma):
@@ -41,7 +36,14 @@ class QTrainer:
     def updateLearningRate(self, lr):   
         for g in  self.optimizer.param_groups:
             g['lr'] = 0.001
-
+            
+    def load(self):
+        model_folder_path = './model/MyModel.pth'
+        #model = TheModelClass(*args, **kwargs)
+       
+        self.model.load_state_dict(torch.load(model_folder_path))
+        self.model.eval()
+        
     def train_step(self, state,action,reward,next_state,done,impulse=False):
        
         state = torch.tensor(state, dtype=torch.float)

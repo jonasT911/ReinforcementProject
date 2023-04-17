@@ -18,5 +18,7 @@ if __name__== '__main__':
             game.startGame()
             while True:
                 game.update()
+        elif(sys.argv[1] == "l"):
+            agent.train(0,0,0,0,0,True)
     else:
         print("Arguments are h or m")
