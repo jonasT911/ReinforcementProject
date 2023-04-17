@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 10
-LR = 0.003 #Was .001
+LR = 0.00002 #Was .001
 
 
 
@@ -321,17 +321,19 @@ class Agent:
         self.trainer.train_step(states, actions, rewards, next_states, dones)
         
     def train_run_memory(self):
-	
+        
         #Can be changed later
         print("Long memory")
         i = 0
 
         mini_sample = self.runMemory
-        
-        states, actions, rewards, next_states,dones = zip (*mini_sample)
-        self.trainer.train_step(states, actions, rewards, next_states, dones)
-        self.runMemory = deque(maxlen = MAX_MEMORY)
-        
+        try:
+            states, actions, rewards, next_states,dones = zip (*mini_sample)
+            self.trainer.train_step(states, actions, rewards, next_states, dones)
+            self.runMemory = deque(maxlen = MAX_MEMORY)
+        except: 
+            print("Nothing in the data")
+            
     def train_short_memory(self, state, action, reward, next_state, done,impulse=False):
         self.trainer.train_step(state, action, reward, next_state, done,impulse)
     
@@ -340,13 +342,13 @@ class Agent:
         #random moves: tradeoff exploitation/exploration
         if(self.n_games<2):
         
-            self.epsilon = 10
+            self.epsilon = 11
         else:
             self.epsilon = 0 
         if (self.epsilon<0):
-            self.epsilon=1#Always ensures a bit of randomness
+            self.epsilon=0#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,10)<=self.epsilon:
+        if random.randint(0,10)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
@@ -398,7 +400,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-        
+        reward = reward*10
         if(reward<0):
             agent.penalizeToLastTurn(reward)
         
@@ -448,7 +450,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             if(sum(state_old[2:5]&final_move[0:3])==0):
                 #Missed open area
                 print("Wrong")
-                agent.train_short_memory(state_old,final_move,reward-2,state_new,done,True)
+               # agent.train_short_memory(state_old,final_move,reward-2,state_new,done,True)
             else:
                 print("Correct")
             agent.train_short_memory(state_old,final_move,reward,state_new,done)

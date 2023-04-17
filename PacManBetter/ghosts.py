@@ -138,9 +138,12 @@ class GhostGroup(object):
         #pass
     	#self.blinky.update(dt)
     	#self.pinky.update(dt)
+        if(not self.activate[0]):
+            self.blinky.position=Vector2(-1,-1)
         for i in range(len(self.ghosts)):
             if(self.activate[i]):
                 self.ghosts[i].update(dt)
+            
 
     def startFreight(self):
         for ghost in self:
