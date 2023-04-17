@@ -158,3 +158,41 @@ class Pacman(Entity):
                  
         return returnPellet, nearest
 
+    def nearestPelletSplit(self,pelletList):
+        nearestX=-1
+        nearestY=-1
+        if(len(pelletList)==0):
+            return None,0
+        returnPellet=pelletList[0]
+       
+        for pellet in pelletList:
+             if (not pellet.eaten):
+                 d = self.position.x - pellet.position.x
+                 dy= self.position.y - pellet.position.y
+                 if(nearestX==-1 or abs(d)<abs(nearestX)):
+                     nearestX=d
+                     
+                 if(nearestY==-1 or abs(dy)<abs(nearestY)):
+                     nearestY=dy
+                     returnPellet = pellet
+                     
+        return returnPellet, Vector2(nearestX,nearestY)
+        
+    def pelletDirections(self,pelletList):
+        pelletAtLocation=[False,False,False,False] #Left,Up,Right,Down
+        if(len(pelletList)==0):
+            return None
+       
+        for pellet in pelletList:
+             if(abs(self.position.x - pellet.position.x)<15):
+                if(self.position.y - pellet.position.y>0 and self.position.y - pellet.position.y<48):
+                    pelletAtLocation[1]=True
+                if(self.position.y - pellet.position.y<0 and self.position.y - pellet.position.y>-48):
+                    pelletAtLocation[3]=True
+             if(abs(self.position.y - pellet.position.y)<15):
+                if(self.position.x - pellet.position.x>0 and self.position.x - pellet.position.x<48):
+                    pelletAtLocation[0]=True
+                if(self.position.x - pellet.position.x<0 and self.position.x - pellet.position.x>-48):
+                    pelletAtLocation[2]=True
+                     
+        return pelletAtLocation

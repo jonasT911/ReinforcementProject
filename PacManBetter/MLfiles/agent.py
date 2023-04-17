@@ -16,7 +16,7 @@ from constants import *
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 10
-LR = 0.001 #Was .001
+LR = 0.003 #Was .001
 
 
 
@@ -25,10 +25,10 @@ class Agent:
     def __init__(self):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.73 #discount rate must be smaller than 1
+        self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(29,2048,3) 
+        self.model = Linear_QNet(19,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -145,6 +145,9 @@ class Agent:
         
         pellets=game.pellets.pelletList
         
+        pelletTurns=game.pacman.pelletDirections(pellets)
+        rotate=0
+        
         dir_l = game.pacman.pointing == LEFT
         dir_r = game.pacman.pointing == RIGHT
         dir_u = game.pacman.pointing == UP
@@ -169,6 +172,10 @@ class Agent:
         pelletY=pacLoc.y- nearest.position.y
         
         if(dir_l or dir_r):
+            if(dir_r):
+                rotate=1
+            else:
+                rotate=-1
             temp=blinkDistX
             blinkDistX=blinkDistY
             blinkDistY=temp
@@ -195,6 +202,8 @@ class Agent:
             PPY=temp
             
         if(dir_l or dir_u):
+            if(dir_u):
+                rotate=-2
             pelletX=pelletX*-1
             pelletY=pelletY*-1
             
@@ -213,6 +222,9 @@ class Agent:
             PPX=PPX*-1
             PPY=PPY*-1
         
+        
+        
+       
         state = [
         pacLoc.x,
         pacLoc.y,
@@ -230,23 +242,7 @@ class Agent:
 	#	Ghost Positions
 		blinkDistX,
 		blinkDistY,
-		blink.mode.current == FREIGHT,
-		blink.mode.current == SPAWN,
-		
-		pinkDistX,
-		pinkDistY,
-		pink.mode.current == FREIGHT,
-		pink.mode.current == SPAWN,
 
-		ink.position.x,
-		ink.position.y,
-		ink.mode.current == FREIGHT,
-		ink.mode.current == SPAWN,
-		
-		clyde.position.x,
-		clyde.position.y,
-		clyde.mode.current == FREIGHT,
-		clyde.mode.current == SPAWN,
 		#Ghost Direction 
 		
 	      
@@ -254,8 +250,10 @@ class Agent:
             pelletY,
             PPX,
             PPY,
-         
-              
+            pelletTurns[(rotate+rotate+0)%4],
+            pelletTurns[(rotate+rotate+1)%4],
+            pelletTurns[(rotate+rotate+2)%4],
+            pelletTurns[(rotate+rotate+3)%4], 
         ]
         
 
@@ -327,7 +325,7 @@ class Agent:
         
             self.epsilon = 10
         else:
-            self.epsilon = 1 
+            self.epsilon = 0 
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
@@ -387,16 +385,19 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         if(reward<0):
             agent.penalizeToLastTurn(reward)
         
-        reward *=10
+        
         if(reward>0):           
             #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
             starving=0
-           
+        
+
         else:
             starving+=1
             if(starving>30):
-                reward-=2
-
+                reward-=.05*starving
+            if(starving>220):
+                reward=-220
+        
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
@@ -430,7 +431,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
             if(sum(state_old[2:5]&final_move[0:3])==0):
                 #Missed open area
                 print("Wrong")
-                agent.train_short_memory(state_old,final_move,reward-100,state_new,done,True)
+                agent.train_short_memory(state_old,final_move,reward-2,state_new,done,True)
             else:
                 print("Correct")
             agent.train_short_memory(state_old,final_move,reward,state_new,done)
@@ -438,6 +439,8 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0):
         
         #Game ends
         if done or starving>220:
+            
+            
             runScore=int((game.score -mean_score)/10)
             print("run Score is "+str(runScore))
             #agent.evaluateWholeRun(runScore)
