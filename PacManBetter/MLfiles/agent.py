@@ -29,7 +29,7 @@ class Agent:
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
-        self.model = Linear_QNet(521,2048,3) 
+        self.model = Linear_QNet(33,2048,3) 
 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.load=load
@@ -233,8 +233,8 @@ class Agent:
         
        
         state = [
-        pacLoc.x,
-        pacLoc.y,
+        0,
+        0,
 
         moving,
 		openLeft,
@@ -307,7 +307,7 @@ class Agent:
                pelletLocations.extend([i.position.x,i.position.y])
             else:
                pelletLocations.extend([-1,-1])
-        state.extend(pelletLocations)
+        #state.extend(pelletLocations)
       
         return np.array(state, dtype=int)
     
@@ -351,7 +351,7 @@ class Agent:
         self.epsilon = 1 
        
         if(self.load):
-            randLimit =100
+            randLimit =40
         else:
             randLimit =20
         if (self.epsilon<0):
@@ -366,8 +366,8 @@ class Agent:
             if(not self.load):
                 print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
-            if(prediction[move]<0 and not self.load):
-                move =random.randint(0,2) #Dropped to 2 while I can not reverse
+            # if(prediction[move]<0 and not self.load):
+                # move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
@@ -423,10 +423,10 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         else:
             starving+=1
             if(starving>30):
-                pass
-               # reward-=.05*starving
+               
+                reward-=.01
             if(starving>320):
-                reward=-200
+                reward=-20
         
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
