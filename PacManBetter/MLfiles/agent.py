@@ -340,11 +340,8 @@ class Agent:
     
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
-        if(self.n_games<2):
-        
-            self.epsilon = 11
-        else:
-            self.epsilon = 0 
+
+        self.epsilon = 0 
         if (self.epsilon<0):
             self.epsilon=0#Always ensures a bit of randomness
         final_move = [0,0,0,0]
