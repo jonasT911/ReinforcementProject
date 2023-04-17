@@ -345,7 +345,7 @@ class Agent:
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
         final_move = [0,0,0,0]
-        if random.randint(0,100)<self.epsilon:
+        if random.randint(0,20)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
         else:
