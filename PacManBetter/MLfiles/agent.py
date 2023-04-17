@@ -28,7 +28,7 @@ class Agent:
         self.gamma=0.9 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
-        self.model = Linear_QNet(19,2048,3) 
+        self.model = Linear_QNet(521,2048,3) 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.holdRandom = 0
         self.Random_move = [0,0,0]
@@ -239,10 +239,27 @@ class Agent:
 		
 		
 		
-	#	Ghost Positions
+		#	Ghost Positions
 		blinkDistX,
 		blinkDistY,
-
+		blink.mode.current == FREIGHT,
+		blink.mode.current == SPAWN,
+		
+		pinkDistX,
+		pinkDistY,
+		pink.mode.current == FREIGHT,
+		pink.mode.current == SPAWN,
+	#NOTHING CAN BE PUT IN FRONT OF THIS!
+		
+		ink.position.x,
+		ink.position.y,
+		ink.mode.current == FREIGHT,
+		ink.mode.current == SPAWN,
+		
+		clyde.position.x,
+		clyde.position.y,
+		clyde.mode.current == FREIGHT,
+		clyde.mode.current == SPAWN,
 		#Ghost Direction 
 		
 	      
@@ -283,7 +300,7 @@ class Agent:
                pelletLocations.extend([i.position.x,i.position.y])
             else:
                pelletLocations.extend([-1,-1])
-        #state.extend(pelletLocations)
+        state.extend(pelletLocations)
       
         return np.array(state, dtype=int)
     
