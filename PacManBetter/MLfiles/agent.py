@@ -18,7 +18,7 @@ import time
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 10
-LR = 0.001 #Was .001
+LR = 0.000001 #Was .001
 
 
 
@@ -27,7 +27,7 @@ class Agent:
     def __init__(self,load=False):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.85 #discount rate must be smaller than 1
+        self.gamma=0.99 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
@@ -240,8 +240,18 @@ class Agent:
             PPX=PPX*-1
             PPY=PPY*-1
         
-        
-        
+        if(not game.ghosts.activate[0]):
+            blinkDistX=0
+            blinkDistY=0
+        if(not game.ghosts.activate[1]):
+            pinkDistX=0
+            pinkDistY=0
+        if(not game.ghosts.activate[2]):
+            inkDistX=0
+            inkDistY=0
+        if(not game.ghosts.activate[3]):
+            clydeDistX=0
+            clydeDistY=0
         #print("rotate is " +str(rotate))
         state = [
 
@@ -271,13 +281,13 @@ class Agent:
 		pink.mode.current == SPAWN,
 	#NOTHING CAN BE PUT IN FRONT OF THIS!
 		
-		ink.position.x,
-		ink.position.y,
+		inkDistX,
+		inkDistY,
 		ink.mode.current == FREIGHT,
 		ink.mode.current == SPAWN,
 		
-		clyde.position.x,
-		clyde.position.y,
+		clydeDistX,
+		clydeDistY,
 		clyde.mode.current == FREIGHT,
 		clyde.mode.current == SPAWN,
 		#Ghost Direction 
@@ -375,7 +385,7 @@ class Agent:
             self.epsilon = -1 
 
         else:
-            randLimit =20
+            randLimit =10
             
         final_move = [0,0,0,0]
         if random.randint(0,randLimit)<self.epsilon:
@@ -454,7 +464,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             starving+=1
             if(starving>30):
                
-                reward-=.01
+                reward-=1
             if(starving>320):
                 reward=-20
 
@@ -469,7 +479,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
               
                 #Missed open area
                 print("Wrong")
-                agent.train_short_memory(state_old,final_move,reward-.1,state_new,done,True)
+                agent.train_short_memory(state_old,final_move,reward-1,state_new,done,True)
             else:
                 
                 print("Correct")
