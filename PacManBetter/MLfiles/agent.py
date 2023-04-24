@@ -490,7 +490,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
            
             
            
-            if((agent.n_games<1000 and not load )or agent.n_games<100):
+            if((agent.n_games<300 and not load )or agent.n_games<100):
                 agent.n_games+=1
                 #Uncomment this later
                 if(not load):
@@ -508,7 +508,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
                 total_score+=score
                 mean_score = total_score/agent.n_games
                 plot_mean_scores.append(mean_score)
-            plot(plot_scores,mean_score)
+            plot(plot_scores)
                 
            
             print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
