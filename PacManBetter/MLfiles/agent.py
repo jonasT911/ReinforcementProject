@@ -31,7 +31,9 @@ class Agent:
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
+
         self.model = Linear_QNet(45,2048,3) 
+
 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.load=load
@@ -242,8 +244,10 @@ class Agent:
         
         #print("rotate is " +str(rotate))
         state = [
+
          0,
          0,
+
 
         moving,
 		openLeft,
@@ -366,8 +370,10 @@ class Agent:
             self.epsilon=1#Always ensures a bit of randomness
             
         if(self.load):
+
             randLimit =100
             self.epsilon = -1 
+
         else:
             randLimit =20
             
@@ -381,8 +387,10 @@ class Agent:
             if(not self.load):
                 print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
+
        #     if(prediction[move]<0 and not self.load):
        #         move =random.randint(0,2) #Dropped to 2 while I can not reverse
+
             final_move[move]=1
         return final_move
         
@@ -442,7 +450,14 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         
 
 
-        
+        else:
+            starving+=1
+            if(starving>30):
+               
+                reward-=.01
+            if(starving>320):
+                reward=-20
+
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
        
