@@ -18,7 +18,7 @@ import time
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 10
-LR = 0.000001 #Was .001
+LR = 0.001 #Was .001
 
 
 
@@ -32,7 +32,7 @@ class Agent:
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
 
-        self.model = Linear_QNet(45,2048,3) 
+        self.model = Linear_QNet(29,2048,3) 
 
 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
@@ -299,22 +299,22 @@ class Agent:
         blinkDir=[0,0,0,0,0]
         blinkDir[2+blink.direction]=1
         b=self.ghostDir(blinkDir,rotate)
-        state.extend(b)
+        #state.extend(b)
         
         ink_Dir=[0,0,0,0,0]
         ink_Dir[2+ink.direction]=1
         i=self.ghostDir(ink_Dir,rotate)
-        state.extend(i)
+        #state.extend(i)
         
         pinkDir=[0,0,0,0,0]
         pinkDir[2+pink.direction]=1
         p=self.ghostDir(pinkDir,rotate)
-        state.extend(p)
+        #state.extend(p)
         
         clydeDir=[0,0,0,0,0]
         clydeDir[2+clyde.direction]=1
         c=self.ghostDir(clydeDir,rotate)
-        state.extend(c)
+        #state.extend(c)
         
         
         
@@ -384,8 +384,8 @@ class Agent:
         else:
             state0 =torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
-            if(not self.load):
-                print("Prediction: "+str(prediction))
+           
+            print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
 
        #     if(prediction[move]<0 and not self.load):
@@ -410,7 +410,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
     starving =0
     standingStill=0
     agent.previousLocation= Vector2(0,0)
-    
+    gamesOut=0
     game.ghosts.activate=[blinkyStart<=0,pinkyStart<=0,inkyStart<=0,clydeStart<=0]
     
     lastPellet,lastPelletDist=game.pacman.nearestPellet(game.pellets.pelletList)
@@ -469,7 +469,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
               
                 #Missed open area
                 print("Wrong")
-                agent.train_short_memory(state_old,final_move,reward-.01,state_new,done,True)
+                agent.train_short_memory(state_old,final_move,reward-.1,state_new,done,True)
             else:
                 
                 print("Correct")
@@ -489,33 +489,33 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             
            
             
-            agent.n_games+=1
-            #Uncomment this later
-            if(not load):
-                agent.train_long_memory()
-                agent.train_run_memory()
-            
-            if score>record :
-                record=score
-            if(not load):
-                agent.model.save()
-         
-            #Plot
-            
-            plot_scores.append(score)
-            total_score+=score
-            mean_score = total_score/agent.n_games
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores)
-            
+           
             if((agent.n_games<1000 and not load )or agent.n_games<100):
-                print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
-                game.restartGame(PPStart<=agent.n_games)
-                game.lives=1
-                game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]
-            else:
-                while True:
-                   time.sleep(10)
+                agent.n_games+=1
+                #Uncomment this later
+                if(not load):
+                    agent.train_long_memory()
+                    agent.train_run_memory()
+                
+                if score>record :
+                    record=score
+                if(not load):
+                    agent.model.save()
+             
+                #Plot
+                
+                plot_scores.append(score)
+                total_score+=score
+                mean_score = total_score/agent.n_games
+                plot_mean_scores.append(mean_score)
+            plot(plot_scores,mean_score)
+                
+           
+            print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
+            game.restartGame(PPStart<=agent.n_games)
+            game.lives=1
+            game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]
+          
 
 if __name__== '__main__':
 	print("Begin ML Pac-Man")
