@@ -262,11 +262,7 @@ class Agent:
         moving,
 		openLeft,
 		openRight,
-		dir_u,
-		dir_d,	
-		dir_l,
-		dir_r,
-		
+
 		
 		
 		#	Ghost Positions
@@ -293,10 +289,10 @@ class Agent:
 		#Ghost Direction 
 		
 	      
-       #     pelletX,
-        #    pelletY,
-        #    PPX,
-        #    PPY,
+            pelletX,
+            pelletY,
+            PPX,
+            PPY,
             pelletTurns[(rotate+3)%4],
             pelletTurns[(rotate+0)%4],
             pelletTurns[(rotate+2)%4],
@@ -373,10 +369,11 @@ class Agent:
     def get_action(self,state):
         #random moves: tradeoff exploitation/exploration
 
-        self.epsilon = 1 
+        if(self.n_games==0):
+            self.epsilon = 10 
+        self.epsilon -=1
        
-       
-        if (self.epsilon<0):
+        if (self.epsilon<=0):
             self.epsilon=1#Always ensures a bit of randomness
             
         if(self.load):
@@ -391,6 +388,7 @@ class Agent:
         if random.randint(0,randLimit)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move] = 1
+            print("RANDOM ACTION")
         else:
             state0 =torch.tensor(state, dtype = torch.float)
             prediction = self.model(state0)
@@ -451,7 +449,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         if(reward<=0):
             starving+=1
             #agent.penalizeToLastTurn(reward)
-            reward-=.03
+
         
         
         if(reward>0):           
@@ -463,8 +461,8 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         else:
             starving+=1
             if(starving>30):
+               pass
                
-                reward-=1
             if(starving>320):
                 reward=-20
 
@@ -479,7 +477,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
               
                 #Missed open area
                 print("Wrong")
-                agent.train_short_memory(state_old,final_move,reward-1,state_new,done,True)
+                agent.train_short_memory(state_old,final_move,reward-.03,state_new,done,True)
             else:
                 
                 print("Correct")
@@ -504,8 +502,10 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
                 agent.n_games+=1
                 #Uncomment this later
                 if(not load):
+                    for i in range(5):
+                        agent.train_run_memory()
                     agent.train_long_memory()
-                    agent.train_run_memory()
+
                 
                 if score>record :
                     record=score
