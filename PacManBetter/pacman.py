@@ -184,15 +184,19 @@ class Pacman(Entity):
             return None
        
         for pellet in pelletList:
-             if(abs(self.position.x - pellet.position.x)<15):
-                if(self.position.y - pellet.position.y>0 and self.position.y - pellet.position.y<48):
-                    pelletAtLocation[1]=True
-                if(self.position.y - pellet.position.y<0 and self.position.y - pellet.position.y>-48):
-                    pelletAtLocation[3]=True
-             if(abs(self.position.y - pellet.position.y)<15):
-                if(self.position.x - pellet.position.x>0 and self.position.x - pellet.position.x<48):
-                    pelletAtLocation[0]=True
-                if(self.position.x - pellet.position.x<0 and self.position.x - pellet.position.x>-48):
-                    pelletAtLocation[2]=True
+             if(not pellet.eaten):
+                 if(abs(self.position.x - pellet.position.x)<5 and (abs(self.position.y - pellet.position.y)<49)):
+                    if((self.position.y - pellet.position.y)>0 ):
+                        pelletAtLocation[1]=True #pellet up
+                    if((self.position.y - pellet.position.y)<0):
+                        pelletAtLocation[3]=True #pellet down
+                    
+                 if(abs(self.position.y - pellet.position.y)<5  and abs(self.position.x - pellet.position.x)<49):
+                     if((self.position.x - pellet.position.x)>0):
+                         print("Left pellet"+str(pellet.position))
+                         pelletAtLocation[0]=True #Left
+                     if((self.position.x - pellet.position.x)<0 ):
+                         print("Right pellet"+str(pellet.position))
+                         pelletAtLocation[2]=True #Right
                      
         return pelletAtLocation

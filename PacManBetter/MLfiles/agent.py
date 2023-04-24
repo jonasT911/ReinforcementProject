@@ -14,9 +14,11 @@ from MLfiles.helper import plot
 
 from constants import *
 
+import time
+
 MAX_MEMORY = 100000
 BATCH_SIZE = 10
-LR = 0.00002 #Was .001
+LR = 0.000001 #Was .001
 
 
 
@@ -25,11 +27,11 @@ class Agent:
     def __init__(self,load=False):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.9 #discount rate must be smaller than 1
+        self.gamma=0.85 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
-        self.model = Linear_QNet(521,2048,3) 
+        self.model = Linear_QNet(45,2048,3) 
 
         self.trainer = QTrainer(self.model,lr=LR,gamma=self.gamma) 
         self.load=load
@@ -124,6 +126,13 @@ class Agent:
         print("MEMORY = "+str(len(self.memory)))
         print("RUn was length "+str(dist))
              
+             
+    def ghostDir(self, ghostArray,rotate):
+        array=[ghostArray[0], ghostArray[1],ghostArray[4],ghostArray[3]]
+        result=[array[(0+rotate)%4], array[(1+rotate)%4], array[(2+rotate)%4], array[(3+rotate)%4]]
+        return result
+        
+        
     def get_state(self, game):
     
       
@@ -180,9 +189,9 @@ class Agent:
         
         if(dir_l or dir_r):
             if(dir_r):
-                rotate=1
+                rotate=3
             else:
-                rotate=-1
+                rotate=1
             temp=blinkDistX
             blinkDistX=blinkDistY
             blinkDistY=temp
@@ -210,7 +219,7 @@ class Agent:
             
         if(dir_l or dir_u):
             if(dir_u):
-                rotate=-2
+                rotate=2
             pelletX=pelletX*-1
             pelletY=pelletY*-1
             
@@ -231,10 +240,10 @@ class Agent:
         
         
         
-       
+        #print("rotate is " +str(rotate))
         state = [
-        pacLoc.x,
-        pacLoc.y,
+         0,
+         0,
 
         moving,
 		openLeft,
@@ -251,7 +260,7 @@ class Agent:
 		blinkDistY,
 		blink.mode.current == FREIGHT,
 		blink.mode.current == SPAWN,
-		
+	#	
 		pinkDistX,
 		pinkDistY,
 		pink.mode.current == FREIGHT,
@@ -270,14 +279,14 @@ class Agent:
 		#Ghost Direction 
 		
 	      
-            pelletX,
-            pelletY,
-            PPX,
-            PPY,
-            pelletTurns[(rotate+rotate+0)%4],
-            pelletTurns[(rotate+rotate+1)%4],
-            pelletTurns[(rotate+rotate+2)%4],
-            pelletTurns[(rotate+rotate+3)%4], 
+       #     pelletX,
+        #    pelletY,
+        #    PPX,
+        #    PPY,
+            pelletTurns[(rotate+3)%4],
+            pelletTurns[(rotate+0)%4],
+            pelletTurns[(rotate+2)%4],
+            pelletTurns[(rotate+1)%4], 
         ]
         
 
@@ -285,19 +294,23 @@ class Agent:
         #Add the pellets to the list, and show if they are active.
         blinkDir=[0,0,0,0,0]
         blinkDir[2+blink.direction]=1
-        #state.extend(blinkDir)
+        b=self.ghostDir(blinkDir,rotate)
+        state.extend(b)
         
         ink_Dir=[0,0,0,0,0]
         ink_Dir[2+ink.direction]=1
-        #state.extend(ink_Dir)
+        i=self.ghostDir(ink_Dir,rotate)
+        state.extend(i)
         
         pinkDir=[0,0,0,0,0]
         pinkDir[2+pink.direction]=1
-        #state.extend(pinkDir)
+        p=self.ghostDir(pinkDir,rotate)
+        state.extend(p)
         
         clydeDir=[0,0,0,0,0]
         clydeDir[2+clyde.direction]=1
-        #state.extend(clydeDir)
+        c=self.ghostDir(clydeDir,rotate)
+        state.extend(c)
         
         
         
@@ -307,7 +320,7 @@ class Agent:
                pelletLocations.extend([i.position.x,i.position.y])
             else:
                pelletLocations.extend([-1,-1])
-        state.extend(pelletLocations)
+        #state.extend(pelletLocations)
       
         return np.array(state, dtype=int)
     
@@ -328,18 +341,16 @@ class Agent:
         self.trainer.train_step(states, actions, rewards, next_states, dones)
         
     def train_run_memory(self):
-        
-        #Can be changed later
-       
         i = 0
-
-        mini_sample = self.runMemory
-        try:
-            states, actions, rewards, next_states,dones = zip (*mini_sample)
-            self.trainer.train_step(states, actions, rewards, next_states, dones)
-            self.runMemory = deque(maxlen = MAX_MEMORY)
-        except: 
-            print("Nothing in the data")
+        for x in range(5):
+            x+=1
+            mini_sample = self.runMemory
+            try:
+                states, actions, rewards, next_states,dones = zip (*mini_sample)
+                self.trainer.train_step(states, actions, rewards, next_states, dones)
+                self.runMemory = deque(maxlen = MAX_MEMORY)
+            except: 
+                print("Nothing in the data")
             
     def train_short_memory(self, state, action, reward, next_state, done,impulse=False):
         self.trainer.train_step(state, action, reward, next_state, done,impulse)
@@ -350,12 +361,16 @@ class Agent:
 
         self.epsilon = 1 
        
-        if(self.load):
-            randLimit =100
-        else:
-            randLimit =20
+       
         if (self.epsilon<0):
             self.epsilon=1#Always ensures a bit of randomness
+            
+        if(self.load):
+            randLimit =100
+            self.epsilon = -1 
+        else:
+            randLimit =20
+            
         final_move = [0,0,0,0]
         if random.randint(0,randLimit)<self.epsilon:
             move =random.randint(0,2) #Dropped to 2 while I can not reverse
@@ -366,8 +381,8 @@ class Agent:
             if(not self.load):
                 print("Prediction: "+str(prediction))
             move = torch.argmax(prediction).item() #Change the function to return one of four directions.
-            if(prediction[move]<0 and not self.load):
-                move =random.randint(0,2) #Dropped to 2 while I can not reverse
+       #     if(prediction[move]<0 and not self.load):
+       #         move =random.randint(0,2) #Dropped to 2 while I can not reverse
             final_move[move]=1
         return final_move
         
@@ -395,12 +410,16 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
     
     while True:
        
+        
         #if(agent.n_games>0):
         #    learningRate=0.01/agent.n_games
         #    agent.trainer.updateLearningRate(learningRate)
         #get old state
         state_old = agent.get_state(game)
-        #print(state_old)
+        
+        if(not load):
+            print("   ")
+            print(state_old)
         
        
         agent.previousLocation=Vector2(game.pacman.position.x,game.pacman.position.y)
@@ -411,8 +430,10 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
         reward = reward*10
-        if(reward<0):
-            agent.penalizeToLastTurn(reward)
+        if(reward<=0):
+            starving+=1
+            #agent.penalizeToLastTurn(reward)
+            reward-=.03
         
         
         if(reward>0):           
@@ -420,43 +441,30 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             starving=0
         
 
-        else:
-            starving+=1
-            if(starving>30):
-                pass
-               # reward-=.05*starving
-            if(starving>320):
-                reward=-200
-        
+
         
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
        
-        print(final_move)
-        if(final_move[3]==1):
-            reward-=.5
-        #Penalize getting close to ghosts
 
-    
-
-       
-        
 
         if(not game.pause.paused and not load):
             print("STATE OLD " + str(state_old[2:5]))
             if(sum(state_old[2:5]&final_move[0:3])==0):
-                if(not agent.load):
+              
                 #Missed open area
-                    print("Wrong")
-                    agent.train_short_memory(state_old,final_move,reward-5,state_new,done,True)
+                print("Wrong")
+                agent.train_short_memory(state_old,final_move,reward-.01,state_new,done,True)
             else:
-                if(not agent.load):
-                    print("Correct")
-            agent.train_short_memory(state_old,final_move,reward,state_new,done)
+                
+                print("Correct")
+                agent.train_short_memory(state_old,final_move,reward,state_new,done)
             agent.remember(state_old,final_move,reward,state_new,done)
         
+        if(not load):
+            print("Reward is :"+str(reward))
         #Game ends
-        if done or (starving>320 and not load):
+        if done or (starving>420 and not load):
             
             
             runScore=int((game.score -mean_score)/10)
@@ -484,11 +492,15 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             mean_score = total_score/agent.n_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores)
-             
-            print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
-            game.restartGame(PPStart<=agent.n_games)
-            game.lives=1
-            game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]
+            
+            if((agent.n_games<1000 and not load )or agent.n_games<100):
+                print('Game',agent.n_games, 'Score',score,'Record:',record,'Average:',mean_score)
+                game.restartGame(PPStart<=agent.n_games)
+                game.lives=1
+                game.ghosts.activate=[blinkyStart<=agent.n_games, pinkyStart<=agent.n_games, inkyStart<=agent.n_games, clydeStart<=agent.n_games]
+            else:
+                while True:
+                   time.sleep(10)
 
 if __name__== '__main__':
 	print("Begin ML Pac-Man")
