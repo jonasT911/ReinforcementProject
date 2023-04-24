@@ -61,15 +61,16 @@ class Agent:
         turns=3
 
         while (i>0 and (turns<2 or len(self.memory)-i<3)):
-             state, action, reward, next_state,done=self.memory[i]
-             
-             turns=int(state[2])+int(state[3])+int(state[4])
-             
-             if(turns<2):
-                 reward=reward+penalty
-             self.memory[i]=(state, action, reward, next_state, done)
-            
              i=i-1
+        state, action, reward, next_state,done=self.memory[i]
+
+        turns=int(state[2])+int(state[3])+int(state[4])
+
+
+        reward=reward+penalty
+        self.memory[i]=(state, action, reward, next_state, done)
+            
+            
         print("Penalty length "+str(len(self.memory)-i))
              
     def rewardUntilLastPenalty(self,extraReward):
@@ -445,26 +446,25 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         #perform move and get new state
         reward,done,score = game.play_step(final_move)
         state_new = agent.get_state(game)
-        reward = reward*10
+        
         if(reward<=0):
             starving+=1
             #agent.penalizeToLastTurn(reward)
-
-        
-        
-        if(reward>0):           
-            #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
-            starving=0
-        
-
-
-        else:
-            starving+=1
+              
             if(starving>30):
                pass
                
             if(starving>320):
                 reward=-20
+        
+        
+        else:           
+            #agent.rewardUntilLastPenalty(reward)#Propagates reward until a different action could have been taken.
+            starving=0
+            reward = reward*100
+
+
+ 
 
         ghostDist=agent.nearestGhost(game.pacman,game.ghosts)
          
@@ -486,6 +486,11 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
         
         if(not load):
             print("Reward is :"+str(reward))
+            
+            
+            
+        if(reward!=0):
+            agent.penalizeToLastTurn(reward)
         #Game ends
         if done or (starving>420 and not load):
             
