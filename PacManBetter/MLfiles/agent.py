@@ -59,16 +59,19 @@ class Agent:
         action=[1,0,0,0]
         reward=10
         turns=3
-
+       
         while (i>0 and (turns<2 or len(self.memory)-i<3)):
              i=i-1
-        state, action, reward, next_state,done=self.memory[i]
+             state, action, reward, next_state,done=self.memory[i]
+  
+             turns=int(state[2])+int(state[3])+int(state[4])
+             
+             if(turns>1):
+                 reward=reward+penalty
+                 self.memory[i]=(state, action, reward, next_state, done)
 
-        turns=int(state[2])+int(state[3])+int(state[4])
 
-
-        reward=reward+penalty
-        self.memory[i]=(state, action, reward, next_state, done)
+        
             
             
         print("Penalty length "+str(len(self.memory)-i))
@@ -503,7 +506,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
            
             
            
-            if((agent.n_games<300 and not load )or agent.n_games<100):
+            if((agent.n_games<200 and not load )or agent.n_games<100):
                 agent.n_games+=1
                 #Uncomment this later
                 if(not load):
