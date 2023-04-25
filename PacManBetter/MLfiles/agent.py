@@ -112,7 +112,8 @@ class Agent:
              i=i-1
              
              
-    def evaluateWholeRun(self,extraReward):
+    def evaluateWholeRun(self):
+        extraReward=0
         print("Rewarding")
         i=len(self.memory)-2
         state, action, old_reward, next_state,done=self.memory[i]
@@ -125,6 +126,8 @@ class Agent:
              if(not done):
                  print(old_reward)
                  reward=old_reward+extraReward
+                 if(old_reward>0):
+                    extraReward+=(old_reward/100)
                  self.memory[i]=(state, action, reward, next_state, done)          
              i=i-1
         dist=len(self.memory)-i
@@ -509,6 +512,7 @@ def train (blinkyStart=0,pinkyStart=0,inkyStart=0,clydeStart=0,PPStart=0,load=Fa
             if((agent.n_games<200 and not load )or agent.n_games<100):
                 agent.n_games+=1
                 #Uncomment this later
+                agent.evaluateWholeRun()
                 if(not load):
                     for i in range(5):
                         agent.train_run_memory()
