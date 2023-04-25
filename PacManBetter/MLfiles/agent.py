@@ -27,7 +27,7 @@ class Agent:
     def __init__(self,load=False):
         self.n_games=0
         self.epsilon = 0 #controls randomness      
-        self.gamma=0.99 #discount rate must be smaller than 1
+        self.gamma=0.75 #discount rate must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #popleft()
         self.runMemory = deque(maxlen = MAX_MEMORY) #popleft()
        
@@ -116,6 +116,8 @@ class Agent:
         extraReward=0
         print("Rewarding")
         i=len(self.memory)-2
+        if(i<=0):
+            return
         state, action, old_reward, next_state,done=self.memory[i]
         done = False
         print("Run rewards are ")
@@ -127,7 +129,7 @@ class Agent:
                  print(old_reward)
                  reward=old_reward+extraReward
                  if(old_reward>0):
-                    extraReward+=(old_reward/100)
+                    extraReward+=(int(old_reward/100))
                  self.memory[i]=(state, action, reward, next_state, done)          
              i=i-1
         dist=len(self.memory)-i
@@ -385,7 +387,7 @@ class Agent:
             
         if(self.load):
 
-            randLimit =100
+         
             self.epsilon = -1 
 
         else:
